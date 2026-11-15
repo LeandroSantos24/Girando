@@ -1,4 +1,4 @@
-# Fase 4 · estado de avance (checkpoint del 15/11/2026, 20:00)
+# Fase 4 · estado de avance (checkpoint del 15/11/2026, 23:30)
 
 Archivo de traspaso: cualquier sesión que retome la fase 4 empieza por acá.
 Todo local. Nada desplegado. Nada de datos ni pagos reales.
@@ -62,11 +62,30 @@ se diagnosticaron como arrastre del rate limit; si quedara otro rojo, es un hall
   que ahora funciona aunque la API no arranque.
 - **Falta (necesita Docker):** `make reset-dev-db`, `make test` y correr `migrate` por segunda vez con Alembic (debe ser un no-op).
 
+### Paso 7 · todo el país con Georef — **herramientas listas, dataset sin descargar**
+- `scripts/georef_descargar.py` (`make georef`): baja provincias, departamentos y localidades de la descarga completa oficial
+  (`https://apis.datos.gob.ar/georef/api/v2.0/{entidad}.json`), los normaliza a CSV y escribe `FUENTE.json` (URLs, fecha, filas, sha256).
+- `backend/app/seeds/georef/cargar.sql` + `seed-base`: carga idempotente por código oficial; adopta las filas viejas sin
+  código conservando su `id`; no borra. Sin dataset, `seed-base` usa la lista mínima anterior y lo avisa.
+- Verificado: cargador SQL con `tests/sql/920_georef.sql` (**8/8**, PostgreSQL 16); descargador contra un servidor local
+  con una muestra en la forma documentada (normaliza, omite huérfanos, corta si las cantidades no son plausibles).
+- **Falta (bloqueante para dar el paso por cerrado):** correr `make georef` en una máquina con salida a `apis.datos.gob.ar`
+  y versionar los 4 archivos. No se pudo confirmar contra la API real el nombre exacto de los campos de la v2.0; si difiere,
+  el script corta con un mensaje claro y no escribe nada.
+- A revisar al cargar: `GET /api/geo?level=locality` devuelve todas las localidades sin paginar (hoy solo se usa con `parent_id`).
+
+### Pasos 8, 9 y 10 — **no empezados**
+Frontend de la fase 4 (con WhatsApp por `/api/out`), publicidad etapas A y B, y el cierre (docs, ruff, bandit, E2E) necesitan
+un entorno donde se pueda levantar la API (Docker, o Python con FastAPI/SQLAlchemy/psycopg) para probar lo que se escribe.
+La próxima sesión empieza por: `make reset-dev-db && make test`, confirmar los 80 tests, `make georef`, y seguir con el paso 8.
+
 ## Resultado de tests en este punto
 
-- Fases 1 a 3: **62 de 62 verdes** con las migraciones 0004–0007 aplicadas.
-- Fase 4 (`backend/tests/test_fase4.py`): **12 de 18 verdes**, 6 en rojo (detalle abajo).
-- Falta correr: ruff, bandit, migraciones desde base vacía dos veces, E2E en los tres tamaños.
+- **pytest (API): sin correr desde el checkpoint anterior** (62/62 fases 1–3, 12/18 fase 4). Los arreglos de los pasos 4 y 5
+  apuntan a dejar 18/18, pero falta confirmarlo con `make test`.
+- **Tests SQL con PostgreSQL 16 (corridos en esta sesión):** `900_flujos.sql` 50/50 · `910_fase4_arreglos.sql` 11/11 · `920_georef.sql` 8/8.
+- **Migraciones:** base única aplicada dos veces desde base vacía, esquema idéntico al anterior (`pg_dump`).
+- **ruff:** limpio en `backend/` y `scripts/georef_descargar.py`. **bandit, Alembic, reset-dev-db y E2E: sin correr.**
 
 ## Hecho (backend y base)
 

@@ -20,7 +20,7 @@ def test_sql_business_rules():
     base = ["psql", "-h", host, "-p", port, "-U", user, "-v", "ON_ERROR_STOP=1", "-X", "-q"]
 
     def run(*args, db="postgres"):
-        r = subprocess.run([*base, "-d", db, *args], capture_output=True, text=True, env=env, timeout=180)
+        r = subprocess.run([*base, "-d", db, *args], capture_output=True, text=True, env=env, timeout=180, cwd=ROOT)
         assert r.returncode == 0, r.stderr[-3000:]
         return r
 
@@ -32,4 +32,7 @@ def test_sql_business_rules():
     # Arreglos de la fase 4: RLS de mensajes sin recursión y verificación presencial de repuestos
     r = run("-f", str(ROOT / "tests" / "sql" / "910_fase4_arreglos.sql"), db="girando_sqltest")
     assert r.stderr.count("NOTICE:  ok") >= 11
+    # Cargador de Georef (provincias, departamentos, localidades): idempotente y sin duplicados
+    r = run("-f", str(ROOT / "tests" / "sql" / "920_georef.sql"), db="girando_sqltest")
+    assert r.stderr.count("NOTICE:  ok") >= 8
     run("-c", "DROP DATABASE IF EXISTS girando_sqltest")

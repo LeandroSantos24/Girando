@@ -4,7 +4,7 @@
 COMPOSE := docker compose
 DB_NAME ?= girando
 
-.PHONY: help setup dev down logs test reset reset-dev-db build-web superadmin lint
+.PHONY: help setup dev down logs test reset reset-dev-db build-web superadmin lint georef
 
 help:  ## Lista los atajos
 	@grep -E '^[a-zA-Z_-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  make %-14s %s\n", $$1, $$2}'
@@ -35,6 +35,9 @@ reset-dev-db:  ## Vacía la base local de desarrollo, migra desde cero y carga l
 
 build-web:  ## Regenera web/index.html y web/admin/index.html desde web/src
 	python3 scripts/build_web.py
+
+georef:  ## Descarga provincias, departamentos y localidades del dataset oficial Georef (datos.gob.ar) al repo
+	python3 scripts/georef_descargar.py
 
 superadmin:  ## Crea el primer superadmin: make superadmin EMAIL=vos@dominio.com (pide SUPERADMIN_PASSWORD)
 	@test -n "$(EMAIL)" || (echo "Falta EMAIL=..." && exit 1)

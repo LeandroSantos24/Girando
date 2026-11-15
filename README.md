@@ -111,7 +111,7 @@ Todas están documentadas en [`.env.example`](.env.example). Las importantes:
 - Migraciones: **Alembic** con archivos SQL versionados. El esquema completo está en una base única, `backend/sql/0001_base/` (dividida por dominio), con una sola versión (`base_0001`). Se aplican solas al arrancar la API (`python -m app.cli migrate`). Detalle y verificación: [docs/11-migraciones.md](docs/11-migraciones.md).
 - Crear una migración nueva: agregá `backend/sql/0002_x.sql` y `backend/migrations/versions/0002_x.py` (`down_revision = "base_0001"`) que llame `run_sql("0002_x.sql")`.
 - `python -m app.cli bootstrap-db` crea/actualiza el rol `girando_api` (NOINHERIT, sin privilegios propios).
-- `python -m app.cli seed-base` carga datos de referencia **reales e idempotentes**: provincias y departamentos (Mendoza, San Juan, San Luis), catálogo inicial, planes, motivos de reporte, plantillas de email, políticas de retención y textos legales en borrador.
+- `python -m app.cli seed-base` carga datos de referencia **reales e idempotentes**: provincias, departamentos y localidades de todo el país desde el dataset oficial Georef versionado en `backend/app/seeds/georef/` (se descarga con `make georef`; sin dataset, lista mínima de Cuyo), catálogo inicial, planes, motivos de reporte, plantillas de email, políticas de retención y textos legales en borrador.
 - `python -m app.cli seed-dev [--reset-passwords]` y `reset-dev-db --confirm <base>` solo corren con `ENV=development`.
 - `python -m app.cli jobs [--loop 300]` es el worker: vencimientos de publicaciones, suscripciones (gracia, avisos, pausa de excedentes) y promociones, avisos, purga de fotos de vendidos (7 días), purga de patentes (24 meses), agregados de estadísticas, cotización USD y particiones.
 

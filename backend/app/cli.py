@@ -83,19 +83,50 @@ def _q(conn, sql, **p):
     return conn.execute(text(sql), p)
 
 
+GEOREF_DIR = Path(__file__).resolve().parent / "seeds" / "georef"
+GEOREF_FILES = (("province", "provincias.csv", None), ("department", "departamentos.csv", "provincia_codigo"),
+                ("locality", "localidades.csv", "departamento_codigo"))
+
+
+def _load_georef(conn) -> bool:
+    """Carga provincias, departamentos y localidades desde los CSV de Georef (scripts/georef_descargar.py).
+    Idempotente: la clave es el código oficial. Devuelve False si el dataset todavía no está en el repo."""
+    import csv
+    if not all((GEOREF_DIR / f).exists() for _, f, _ in GEOREF_FILES):
+        log.warning("georef_dataset_missing: corré scripts/georef_descargar.py (make georef) para cargar todo el país")
+        return False
+    batch = []
+    for level, fname, parent_col in GEOREF_FILES:
+        with (GEOREF_DIR / fname).open(encoding="utf-8", newline="") as fh:
+            for r in csv.DictReader(fh):
+                batch.append({"level": level, "code": r["codigo"], "parent": r[parent_col] if parent_col else None, "name": r["nombre"],
+                              "lat": r["lat"] or None, "lng": r["lng"] or None})
+    conn.execute(text("CREATE TEMP TABLE tmp_georef (level text, code text, parent_code text, name text, lat numeric, lng numeric) ON COMMIT DROP"))
+    conn.execute(text("INSERT INTO tmp_georef VALUES (:level, :code, :parent, :name, CAST(:lat AS numeric), CAST(:lng AS numeric))"), batch)
+    conn.exec_driver_sql((GEOREF_DIR / "cargar.sql").read_text(encoding="utf-8"))
+    log.info("georef_loaded", extra={"rows": len(batch)})
+    return True
+
+
+def _seed_geo_fallback(conn) -> None:
+    """Respaldo sin dataset: las 24 jurisdicciones y los departamentos de Cuyo (lo que había antes de Georef)."""
+    ar = scalar(conn, "SELECT id FROM app.geo_areas WHERE level = 'country' AND name = 'Argentina'")
+    if not ar:
+        ar = scalar(conn, "INSERT INTO app.geo_areas (level, name, country_code) VALUES ('country', 'Argentina', 'AR') RETURNING id")
+    for prov in B.PROVINCES:
+        pid = scalar(conn, "SELECT id FROM app.geo_areas WHERE parent_id = :p AND name = :n", {"p": ar, "n": prov})
+        if not pid:
+            pid = scalar(conn, "INSERT INTO app.geo_areas (parent_id, level, name) VALUES (:p, 'province', :n) RETURNING id", {"p": ar, "n": prov})
+        for dep in B.DEPARTMENTS.get(prov, []):
+            if not scalar(conn, "SELECT 1 FROM app.geo_areas WHERE parent_id = :p AND name = :n", {"p": pid, "n": dep}):
+                _q(conn, "INSERT INTO app.geo_areas (parent_id, level, name) VALUES (:p, 'department', :n)", p=pid, n=dep)
+
+
 def cmd_seed_base(_):
     with unit_of_work("worker") as conn:
-        # Geo
-        ar = scalar(conn, "SELECT id FROM app.geo_areas WHERE level = 'country' AND name = 'Argentina'")
-        if not ar:
-            ar = scalar(conn, "INSERT INTO app.geo_areas (level, name, country_code) VALUES ('country', 'Argentina', 'AR') RETURNING id")
-        for prov in B.PROVINCES:
-            pid = scalar(conn, "SELECT id FROM app.geo_areas WHERE parent_id = :p AND name = :n", {"p": ar, "n": prov})
-            if not pid:
-                pid = scalar(conn, "INSERT INTO app.geo_areas (parent_id, level, name) VALUES (:p, 'province', :n) RETURNING id", {"p": ar, "n": prov})
-            for dep in B.DEPARTMENTS.get(prov, []):
-                if not scalar(conn, "SELECT 1 FROM app.geo_areas WHERE parent_id = :p AND name = :n", {"p": pid, "n": dep}):
-                    _q(conn, "INSERT INTO app.geo_areas (parent_id, level, name) VALUES (:p, 'department', :n)", p=pid, n=dep)
+        # Geo: dataset oficial Georef versionado (todo el país). Sin dataset, lista mínima de respaldo.
+        if not _load_georef(conn):
+            _seed_geo_fallback(conn)
         # Catálogo
         engines = {}
         for brand, models in B.CATALOG:
