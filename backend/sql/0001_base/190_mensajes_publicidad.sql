@@ -1,5 +1,5 @@
 -- =====================================================================
--- 0007 · Fase 4 — Mensajería para todas las verticales, reportes de posts,
+-- 190 · Mensajería y publicidad (ex 0007, fase 4): mensajería para todas las verticales, reportes de posts,
 --        historial del usuario, búsquedas guardadas y medición de publicidad.
 -- =====================================================================
 SET search_path = app, public;

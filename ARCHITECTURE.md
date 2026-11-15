@@ -45,7 +45,7 @@
 | Routers | `app/api/routers/` | `auth`, `public`, `me`, `billing`, `admin` |
 | Servicios | `app/services/` | auth, cuenta/plan, búsqueda (interpreta “gol trend 2015”), publicaciones, fotos, analítica |
 | Integraciones | `app/integrations/` | Mercado Pago, Google, BCRA, email, documentos R2 |
-| SQL | `sql/0001_initial/*.sql` | Modelo aprobado: 59 tablas, enums, RLS, triggers, vistas `api_public` |
+| SQL | `sql/0001_base/*.sql` | Modelo aprobado: 59 tablas, enums, RLS, triggers, vistas `api_public` |
 | Migraciones | `migrations/` | Alembic ejecutando los SQL versionados |
 | CLI | `app/cli.py` | `migrate`, `bootstrap-db`, `seed-base`, `seed-dev`, `jobs`, `create-superadmin` |
 

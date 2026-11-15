@@ -41,7 +41,7 @@ recibe 403/404 (RLS + controles del endpoint).
 ## Dónde está
 
 - `backend/app/api/routers/admin.py` y `business.py`: constantes `MOD`, `CATALOG`, `USERS`, `FINANCE`, `SUPER`.
-- `backend/sql/0003_fase3.sql`: políticas RLS de planes, suscripciones, pagos, promociones, Home, emails, auditoría, retención → solo superadmin (lectura comercial también finance).
+- `backend/sql/0001_base/160_roles_suscripciones_home.sql`: políticas RLS de planes, suscripciones, pagos, promociones, Home, emails, auditoría, retención → solo superadmin (lectura comercial también finance).
 - `web/src/admin-logic.js`: `ACCESS` (qué secciones se muestran por rol). Es solo presentación.
 
 ## Cuentas de desarrollo

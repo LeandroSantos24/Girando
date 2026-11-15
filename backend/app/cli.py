@@ -37,9 +37,25 @@ def owner_engine():
 
 
 # --------------------------------------------------------------------------- migraciones / roles
+LEGACY_REVISIONS = {f"000{i}" for i in range(1, 10)}   # versiones previas a la base única (base_0001)
+
+
+def _refuse_legacy_revision() -> None:
+    """Las migraciones 0001–0009 se compactaron en una base única. Una base local creada con las viejas
+    no se puede actualizar en el lugar: hay que recrearla (no hay datos reales ni nada desplegado)."""
+    with owner_engine().connect() as conn:
+        if not conn.execute(text("SELECT to_regclass('public.alembic_version')")).scalar():
+            return
+        current = conn.execute(text("SELECT version_num FROM public.alembic_version")).scalar()
+    if current in LEGACY_REVISIONS:
+        sys.exit(f"La base está en la migración antigua '{current}'. Las migraciones se compactaron en una base única: "
+                 "recreá la base local con  make reset-dev-db  (o  make reset && make dev ).")
+
+
 def cmd_migrate(_):
     from alembic import command
     from alembic.config import Config
+    _refuse_legacy_revision()
     cfg = Config(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
     cfg.set_main_option("script_location", str(Path(__file__).resolve().parents[1] / "migrations"))
     command.upgrade(cfg, "head")

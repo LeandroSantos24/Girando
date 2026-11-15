@@ -1,5 +1,5 @@
 -- =====================================================================
--- 0005 · Fase 4 — Marketplace: carrocería, color, precio normalizado,
+-- 170 · Marketplace (ex 0005, fase 4): carrocería, color, precio normalizado,
 --        historial de precio público y FINANCIACIÓN POR ENTIDAD.
 -- Regla: la financiación es un dato estructurado y moderado, nunca texto libre.
 -- Si hay tasa, van las tres (TNA, TEA y CFT); si no hay tasa, no se inventa.

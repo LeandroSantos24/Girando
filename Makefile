@@ -29,8 +29,9 @@ reset:  ## BORRA la base local y los volúmenes (docker compose down -v)
 	$(COMPOSE) down -v
 
 reset-dev-db:  ## Vacía la base local de desarrollo, migra desde cero y carga los seeds (solo ENV=development)
-	$(COMPOSE) exec api python -m app.cli reset-dev-db --confirm $(DB_NAME)
-	$(COMPOSE) restart api worker
+	$(COMPOSE) up -d db redis
+	$(COMPOSE) run --rm --no-deps api python -m app.cli reset-dev-db --confirm $(DB_NAME)
+	$(COMPOSE) up -d --force-recreate api worker
 
 build-web:  ## Regenera web/index.html y web/admin/index.html desde web/src
 	python3 scripts/build_web.py

@@ -1,5 +1,5 @@
 -- =====================================================================
--- 0006 · Fase 4 — Verticales (Taxis y permisos, Servicios, Repuestos, Empleos),
+-- 180 · Verticales (ex 0006, fase 4):  (Taxis y permisos, Servicios, Repuestos, Empleos),
 --        planes por tipo de cuenta, límite gratis compartido, cambio de plan,
 --        compra de promociones y candado de repuestos (pago + verificación).
 --
@@ -145,7 +145,7 @@ CREATE TABLE IF NOT EXISTS taxi_posts (
   permit_verified_by   uuid REFERENCES users(id),
   CONSTRAINT tx_permit_number CHECK (permit_number IS NULL OR permit_number ~ '^[A-Za-z0-9 ./-]{1,20}$'),
   CONSTRAINT tx_holder CHECK (permit_holder_declared IS NULL OR length(permit_holder_declared) <= 120),
-  CONSTRAINT tx_year CHECK (vehicle_year IS NULL OR vehicle_year BETWEEN 1980 AND 2100),
+  CONSTRAINT tx_year CHECK (vehicle_year IS NULL OR vehicle_year BETWEEN 1900 AND 2100),   -- plausibilidad (igual que vehicles); sin límite de antigüedad
   CONSTRAINT tx_prices CHECK ((permit_price IS NULL OR permit_price > 0) AND (vehicle_price IS NULL OR vehicle_price > 0)),
   CONSTRAINT tx_equipment CHECK (cardinality(equipment) <= 15),
   -- Coherencia entre lo que se ofrece y los datos cargados

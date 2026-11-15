@@ -1,5 +1,6 @@
 -- =====================================================================
--- GIRANDO · Modelo de datos v0 (PROPUESTA PARA REVISIÓN — NO ES MIGRACIÓN)
+-- GIRANDO · Base única del esquema (fases 1 a 4). La aplica Alembic (base_0001) en una transacción,
+-- archivo por archivo en orden alfabético. Cambios futuros: migraciones nuevas, no editar esta base.
 -- 000 · Extensiones, esquemas, roles y funciones de contexto
 -- Motor objetivo: PostgreSQL 16 (compatible con Supabase cambiando
 -- app_current_user_id() por auth.uid()).

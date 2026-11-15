@@ -400,6 +400,7 @@ BEGIN
 END $$;
 CREATE TRIGGER a_verifications_guard BEFORE INSERT OR UPDATE ON verifications FOR EACH ROW EXECUTE FUNCTION tg_verifications_guard();
 
+-- 'onsite_visit' es la verificación presencial de casas de repuestos: igual que 'agency', define el estado de la cuenta.
 CREATE OR REPLACE FUNCTION app.tg_verifications_effects() RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = app, public AS $$
 DECLARE k app.verification_kind;
@@ -409,7 +410,7 @@ BEGIN
   IF k = 'identity' AND NEW.subject_user_id IS NOT NULL THEN
     UPDATE app.users SET identity_verified_at = CASE WHEN NEW.status = 'approved' THEN now() ELSE NULL END
      WHERE id = NEW.subject_user_id AND NEW.status IN ('approved','revoked');
-  ELSIF k = 'agency' AND NEW.subject_agency_id IS NOT NULL THEN
+  ELSIF k IN ('agency','onsite_visit') AND NEW.subject_agency_id IS NOT NULL THEN
     UPDATE app.agencies SET
       status = CASE NEW.status WHEN 'review' THEN 'review' WHEN 'approved' THEN 'verified'
                                WHEN 'rejected' THEN 'rejected' WHEN 'revoked' THEN 'revoked' END::app.agency_status,

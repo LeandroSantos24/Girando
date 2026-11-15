@@ -29,7 +29,7 @@ Todo local. Nada desplegado. Nada de datos ni pagos reales.
 Tres causas, dos de ellas en la base:
 1. **Recursión RLS en `messages`**: la política `msg_select` consultaba `app.messages` dentro de sí misma. Ahora usa
    `app.conversation_has_message_report(uuid)` (`SECURITY DEFINER`, devuelve solo un booleano). El alcance no cambia:
-   participantes, o moderación solo si hay un mensaje reportado. → `backend/sql/0008_fase4_arreglos.sql`.
+   participantes, o moderación solo si hay un mensaje reportado. → hoy en `backend/sql/0001_base/130_rls.sql`.
 2. **Casa de repuestos que quedaba `pending`**: la causa no estaba en el endpoint sino en el trigger
    `tg_verifications_effects`, que solo propagaba el resultado a la cuenta cuando el producto era de tipo `agency`;
    el de repuestos es `onsite_visit`. Ahora propaga ambos. El candado de pago (`PAGO_REQUERIDO_ANTES_DE_VERIFICAR`) sigue igual.
@@ -48,10 +48,19 @@ se diagnosticaron como arrastre del rate limit; si quedara otro rojo, es un hall
   Mendoza y un piso de año 1980 en `taxi_posts` (más alto que el de vehículos).
 - Ahora: único texto, `taxi.legal_notice` = “La transferencia del permiso requiere autorización de la autoridad de
   transporte.” (editable en Admin → Configuración). Nota y campo eliminados. Año de taxi 1900–2100, igual que `vehicles`
-  (control de plausibilidad, no de antigüedad). → `backend/sql/0009_taxis_sin_antiguedad.sql`, `seeds/base_data.py`,
+  (control de plausibilidad, no de antigüedad). → hoy en `backend/sql/0001_base/180_verticales_planes.sql`, `seeds/base_data.py`,
   `routers/verticals.py`.
 - Test actualizado (`test_taxi_post…`): el aviso es exactamente el corto, no existe `vehicle_age_note` y un taxi modelo 1975 se publica.
 - Verificado: la migración aplica sobre base vacía y `tx_year` queda 1900–2100; ruff limpio. **Falta:** `make test`.
+
+### Paso 6 · migraciones compactadas en una base única
+- `backend/sql/0001_base/` (20 archivos por dominio) + una sola versión de Alembic (`base_0001`). Detalle: `docs/11-migraciones.md`.
+- **Esquema equivalente verificado**: `pg_dump --schema-only` antes (0001–0009) y después (base única) → sin diferencias,
+  mismo hash incluso con dueños y permisos. 72 tablas, 238 políticas RLS, 80 enums.
+- **Dos veces desde base vacía**: mismo resultado las dos veces. Tests SQL sobre la base nueva: 900 = 50/50, 910 = 11/11.
+- `migrate` rechaza con mensaje claro una base local en una revisión antigua (`0001`…`0009`): se recrea con `make reset-dev-db`,
+  que ahora funciona aunque la API no arranque.
+- **Falta (necesita Docker):** `make reset-dev-db`, `make test` y correr `migrate` por segunda vez con Alembic (debe ser un no-op).
 
 ## Resultado de tests en este punto
 
@@ -63,13 +72,13 @@ se diagnosticaron como arrastre del rate limit; si quedara otro rojo, es un hall
 
 | Área | Dónde | Estado |
 |---|---|---|
-| Enums nuevos (carrocerías, rubros de cuenta, espacios publicitarios, eventos) | `sql/0004_fase4_enums.sql` | listo |
-| Marketplace: color filtrable, precio normalizado BCRA, historial de precio público, financiación por entidad (TNA+TEA+CFT o ninguna), calculadora | `sql/0005_fase4_marketplace.sql`, `routers/marketplace.py`, `services/search_service.py` | listo, tests verdes |
+| Enums nuevos (carrocerías, rubros de cuenta, espacios publicitarios, eventos) | `sql/0001_base/010_enums.sql` | listo |
+| Marketplace: color filtrable, precio normalizado BCRA, historial de precio público, financiación por entidad (TNA+TEA+CFT o ninguna), calculadora | `sql/0001_base/170_…`, `routers/marketplace.py`, `services/search_service.py` | listo, tests verdes |
 | Filtros nuevos con contadores reales (versión, color, puertas, permuta, entidad, anticipo máximo, cuota máxima, radio) | `routers/public.py`, `services/search_service.py` | listo, tests verdes |
-| Planes por rubro, cupo gratis único del particular (vehículo, taxi o empleo), mejora y baja de plan, candado de repuestos | `sql/0006_fase4_verticales.sql`, `services/account_service.py` | listo, tests verdes salvo repuestos |
+| Planes por rubro, cupo gratis único del particular (vehículo, taxi o empleo), mejora y baja de plan, candado de repuestos | `sql/0001_base/180_…`, `services/account_service.py` | listo, tests verdes salvo repuestos |
 | Rutas de cobro: alta, subir 30→60→+60, bajar, cancelar, destacar publicación; webhook y simulador por el mismo camino idempotente | `routers/billing.py`, `routers/payments.py`, `services/payment_gateway.py` | listo, tests verdes |
 | Verticales Taxis, Servicios, Repuestos, Empleos (publicar, filtros, moderación, sellos) | `routers/verticals.py` | código escrito, 3 tests en rojo |
-| Mensajería interna sin CVs, bloqueo, reporte, moderación | `sql/0007_…`, `routers/messaging.py` | código escrito, 2 tests en rojo |
+| Mensajería interna sin CVs, bloqueo, reporte, moderación | `sql/0001_base/190_…`, `routers/messaging.py` | código escrito, 2 tests en rojo |
 | Publicidad medida, consentimiento de cookies, recomendaciones explicables, búsquedas guardadas, historial | `routers/marketplace.py` | listo salvo 1 test |
 | Jobs: vencimiento de posts, límites de plan, retención de mensajes, avisos de búsquedas guardadas | `app/cli.py` | escritos |
 | Seeds: planes 60 / repuestos / servicios / empresa, entidades, textos legales de taxis y financiación, checklist de repuestos | `seeds/base_data.py` | listo |

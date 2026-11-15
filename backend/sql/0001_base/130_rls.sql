@@ -207,9 +207,19 @@ CREATE POLICY cv_update ON conversations FOR UPDATE TO girando_app USING (buyer_
   OR (seller_agency_id IS NOT NULL AND app_is_agency_member(seller_agency_id)))
   WITH CHECK (status <> 'blocked' OR blocked_by_user_id = me());
 -- Mensajes: el staff SOLO ve mensajes de conversaciones con un reporte (acceso auditado por el backend)
+-- La comprobación "hay un mensaje reportado" va en una función SECURITY DEFINER: si la política consultara
+-- app.messages directamente, se reevaluaría a sí misma (infinite recursion detected in policy for relation "messages").
+CREATE OR REPLACE FUNCTION app.conversation_has_message_report(p_conv uuid) RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = app, public AS $$
+  SELECT EXISTS (SELECT 1 FROM app.reports r JOIN app.messages m ON m.id = r.message_id WHERE m.conversation_id = p_conv)
+$$;
+COMMENT ON FUNCTION app.conversation_has_message_report(uuid) IS
+  'RLS: true si la conversación tiene al menos un mensaje reportado. SECURITY DEFINER para no reevaluar la política de messages (evita recursión). Solo devuelve un booleano.';
+REVOKE ALL ON FUNCTION app.conversation_has_message_report(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION app.conversation_has_message_report(uuid) TO girando_app, girando_worker;
 CREATE POLICY msg_select ON messages FOR SELECT TO girando_app USING (
   is_conversation_participant(conversation_id)
-  OR (is_mod() AND EXISTS (SELECT 1 FROM reports r JOIN messages m2 ON m2.id = r.message_id WHERE m2.conversation_id = messages.conversation_id)));
+  OR (is_mod() AND conversation_has_message_report(conversation_id)));
 CREATE POLICY msg_insert ON messages FOR INSERT TO girando_app WITH CHECK (sender_user_id = me() AND visibility = 'visible' AND read_at IS NULL);
 CREATE POLICY msg_update ON messages FOR UPDATE TO girando_app USING (is_conversation_participant(conversation_id) OR is_mod());
 

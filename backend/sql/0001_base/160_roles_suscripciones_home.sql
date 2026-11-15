@@ -1,5 +1,5 @@
 -- =====================================================================
--- 0003 · Fase 3: Admin vs Super Admin, períodos de suscripción, plan manual,
+-- 160 · Roles (Admin vs Super Admin), suscripciones y Home (ex 0003, fase 3): Admin vs Super Admin, períodos de suscripción, plan manual,
 --        Home administrable, verificación preparada, tracking de clics.
 -- Idempotente donde se puede (IF NOT EXISTS / CREATE OR REPLACE / DROP POLICY IF EXISTS).
 -- =====================================================================
@@ -79,10 +79,6 @@ CREATE POLICY vp_admin_u ON verification_products FOR UPDATE TO girando_app USIN
 -- ---------------------------------------------------------------------
 -- 2. Eventos reales que faltaban para estadísticas
 -- ---------------------------------------------------------------------
-ALTER TYPE analytics_event_name ADD VALUE IF NOT EXISTS 'external_click';
-ALTER TYPE analytics_event_name ADD VALUE IF NOT EXISTS 'message_sent';
-ALTER TYPE analytics_event_name ADD VALUE IF NOT EXISTS 'subscription_activated';
-ALTER TYPE analytics_event_name ADD VALUE IF NOT EXISTS 'payment_approved';
 CREATE INDEX IF NOT EXISTS ae_agency_idx ON analytics_events (agency_id, event_name, occurred_at) WHERE agency_id IS NOT NULL;
 
 -- ---------------------------------------------------------------------
