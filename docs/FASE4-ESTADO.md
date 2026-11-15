@@ -85,7 +85,7 @@ La próxima sesión empieza por: `make reset-dev-db && make test`, confirmar los
   apuntan a dejar 18/18, pero falta confirmarlo con `make test`.
 - **Tests SQL con PostgreSQL 16 (corridos en esta sesión):** `900_flujos.sql` 50/50 · `910_fase4_arreglos.sql` 11/11 · `920_georef.sql` 8/8.
 - **Migraciones:** base única aplicada dos veces desde base vacía, esquema idéntico al anterior (`pg_dump`).
-- **ruff:** limpio en `backend/` y `scripts/georef_descargar.py`. **bandit, Alembic, reset-dev-db y E2E: sin correr.**
+- **ruff:** limpio en `backend/` y `scripts/georef_descargar.py` (se corrigieron 2 avisos previos de orden de imports). **bandit, Alembic, reset-dev-db y E2E: sin correr.**
 
 ## Hecho (backend y base)
 

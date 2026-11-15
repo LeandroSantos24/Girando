@@ -7,7 +7,6 @@ from sqlalchemy.engine import Connection
 
 from app.core.db import row, rows, scalar
 
-
 MAIN_SLOT = {"parts_store": "part", "service_provider": "service", "company": "job"}
 
 

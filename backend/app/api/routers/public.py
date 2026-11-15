@@ -159,7 +159,7 @@ def listing_detail(code: str, request: Request, user: CurrentUser | None = Depen
         with unit_of_work("app", user.id, ctx) as conn:
             d["is_favorite"] = bool(scalar(conn, "SELECT 1 FROM app.favorites WHERE user_id = :u AND listing_id = :l", {"u": user.id, "l": d["id"]}))
             d["is_mine"] = bool(scalar(conn, "SELECT app.can_manage_listing_id(:l)", {"l": d["id"]}))
-        from app.api.routers.marketplace import touch_viewed   # historial propio del usuario (no es analítica)
+        from app.api.routers.marketplace import touch_viewed  # historial propio del usuario (no es analítica)
         touch_viewed(user, d["id"])
     track("listing_view", ctx, user.id if user else None, listing_id=d["id"], agency_id=d["agency_id"])
     return d
