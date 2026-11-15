@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Girando Admin</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/assets/logo-mark.png">
+<link rel="stylesheet" href="/fonts.css">
+<link rel="stylesheet" href="/css/admin.css">
+<script src="/config.js"></script>
+<script src="/girando-api.js"></script>
+<script src="/support.js"></script>
+</head>
+<body>
+<x-dc>
+<sc-if value="{{ checking }}"><div style="position:fixed;inset:0;background:#f6f7f9;z-index:100;display:flex;align-items:center;justify-content:center;font-size:12.5px;color:#5c6370;">Cargando…</div></sc-if>
+<sc-if value="{{ needLogin }}"><div style="position:fixed;inset:0;background:#f6f7f9;z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;"><div style="background:#fff;border:1px solid #eef1f5;border-radius:16px;padding:28px;width:380px;max-width:100%;display:grid;gap:14px;"><div style="display:flex;align-items:center;gap:10px;"><img src="/assets/logo-full.png" alt="Girando" style="height:28px;width:auto;"><span style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:#14171f;color:#fff;padding:3px 7px;border-radius:5px;">Admin</span></div><div style="font-size:20px;font-weight:700;">Ingresá al panel</div><div style="font-size:12.5px;color:#5c6370;line-height:1.5;">Solo para el equipo de Girando. Los permisos los define el servidor según tu rol.</div><label style="display:grid;gap:6px;font-size:12px;font-weight:700;color:#5c6370;">Email<input id="adm-email" type="email" autocomplete="username" value="{{ loginEmail }}" onChange="{{ onLoginEmail }}" style="font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;font-size:14px;padding:11px 14px;"></label><label style="display:grid;gap:6px;font-size:12px;font-weight:700;color:#5c6370;">Contraseña<input id="adm-pass" type="password" autocomplete="current-password" value="{{ loginPass }}" onChange="{{ onLoginPass }}" onKeyDown="{{ onLoginKey }}" style="font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;font-size:14px;padding:11px 14px;"></label><sc-if value="{{ loginError }}"><div role="alert" style="background:#fbe7e7;color:#a32020;border-radius:9px;padding:10px 12px;font-size:12.5px;">{{ loginError }}</div></sc-if><button type="button" onClick="{{ submitLogin }}" style="border:0;background:#1652f0;color:#fff;border-radius:9px;padding:12px 18px;font-size:14px;font-weight:600;cursor:pointer;">{{ loginBtn }}</button><a href="/" style="font-size:12.5px;font-weight:600;">← Volver a la app</a></div></div></sc-if>
+<sc-if value="{{ notStaff }}"><div style="position:fixed;inset:0;background:#f6f7f9;z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;"><div style="background:#fff;border:1px solid #eef1f5;border-radius:16px;padding:28px;width:420px;max-width:100%;display:grid;gap:12px;"><div style="font-size:20px;font-weight:700;">Sin acceso al panel</div><div style="font-size:12.5px;color:#5c6370;line-height:1.5;">Tu cuenta no tiene un rol de administración. Si creés que es un error, pedíselo a un superadmin.</div><div style="display:flex;gap:8px;"><a href="/" style="font-size:13px;font-weight:600;padding:10px 0;">← Volver a la app</a><button type="button" onClick="{{ logout }}" style="margin-left:auto;border:1px solid #dde1e8;background:#fff;border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;padding:9px 14px;font-size:13px;">Cerrar sesión</button></div></div></div></sc-if>
+<a class="ad-skip" href="#ad-main">Saltar al contenido</a>
+<div class="ad-shell" data-nav="{{ navOpen }}">
+  <header class="ad-topbar">
+    <button type="button" class="ad-burger" onClick="{{ toggleNav }}" aria-label="{{ navToggleLabel }}" aria-expanded="{{ navOpen }}" aria-controls="ad-side"><svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M224,128a8,8,0,0,1-8,8H40a8,8,0,0,1,0-16H216A8,8,0,0,1,224,128ZM40,72H216a8,8,0,0,0,0-16H40a8,8,0,0,0,0,16ZM216,184H40a8,8,0,0,0,0,16H216a8,8,0,0,0,0-16Z"/></svg></button>
+    <img src="/assets/logo-full.png" alt="Girando" style="height:24px;width:auto;">
+    <span class="ad-badge">Admin</span>
+    <span class="ad-topbar__title">{{ sectionTitle }}</span>
+  </header>
+  <div class="ad-backdrop" onClick="{{ closeNav }}"></div>
+  <aside id="ad-side" class="ad-side" aria-label="Secciones del panel">
+    <div style="display:flex;align-items:center;gap:10px;padding:0 8px 22px;">
+      <img src="/assets/logo-full.png" alt="Girando" style="height:28px;width:auto;">
+      <span class="ad-badge">Admin</span>
+    </div>
+    <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="12">
+      <sc-if value="{{ n.isHeader }}" hint-placeholder-val="{{ false }}"><div style="font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#9aa0ab;padding:14px 12px 4px;">{{ n.label }}</div></sc-if>
+      <sc-if value="{{ n.isItem }}" hint-placeholder-val="{{ true }}"><button type="button" class="ad-nav" onClick="{{ n.onClick }}" aria-current="{{ n.current }}" style="{{ n.style }}display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;border:0;text-align:left;padding:8px 12px;border-radius:9px;cursor:pointer;font-size:13px;">
+        <span>{{ n.label }}</span>
+        <sc-if value="{{ n.count }}" hint-placeholder-val="{{ false }}"><span class="tg tg-bad" style="font-size:10px;padding:2px 8px;">{{ n.count }}</span></sc-if>
+      </button></sc-if>
+    </sc-for>
+    <div style="margin-top:auto;padding:14px 12px 0;border-top:1px solid #eef1f5;font-size:12px;color:#5c6370;">
+      <div style="font-weight:700;color:#14171f;">{{ adminName }}</div>
+      <div>{{ adminRoles }}</div>
+      <a href="/" style="display:inline-block;margin-top:10px;font-weight:600;">← Volver a la app</a>
+      <button type="button" onClick="{{ resetDemo }}" style="display:block;margin-top:10px;border:0;background:none;padding:0;font-family:inherit;font-size:12px;color:#a32020;font-weight:600;cursor:pointer;">Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <main id="ad-main" class="ad-main" tabindex="-1">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:26px;">
+      <div>
+        <div style="font-size:12px;color:#5c6370;margin-bottom:4px;">Admin / {{ sectionTitle }}</div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><h1 style="margin:0;font-size:26px;font-weight:700;letter-spacing:-0.02em;">{{ sectionTitle }}</h1><span class="tg tg-muted">{{ dataLabel }}</span></div>
+      </div>
+      <input value="{{ query }}" onChange="{{ onQuery }}" placeholder="Buscar usuarios, publicaciones, reportes…" aria-label="Buscar" class="ad-search" style="font-family:inherit;font-size:13.5px;padding:11px 14px;border:1px solid #dde1e8;border-radius:9px;background:#fff;">
+    </div>
+
+    <sc-if value="{{ showPeriod }}" hint-placeholder-val="{{ true }}"><div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;"><sc-for list="{{ periodChips }}" as="pc" hint-placeholder-count="5"><button type="button" onClick="{{ pc.onClick }}" aria-pressed="{{ pc.selected }}" style="{{ pc.style }}border-radius:999px;padding:7px 13px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;">{{ pc.label }}</button></sc-for></div></sc-if>
+    <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ true }}">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:22px;">
+        <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+        <div onClick="{{ k.onClick }}" role="button" tabindex="0" style="background:#fff;border:1px solid #eef1f5;border-radius:14px;padding:18px;cursor:pointer;">
+          <div style="font-size:12.5px;color:#5c6370;font-weight:600;">{{ k.label }}</div>
+          <div style="font-size:30px;font-weight:700;letter-spacing:-0.03em;margin:8px 0 4px;">{{ k.value }}</div>
+          <div style="font-size:12px;font-weight:600;{{ k.deltaStyle }}">{{ k.delta }}</div>
+        </div>
+        </sc-for>
+      </div>
+
+      <div class="ad-split" style="display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px;margin-bottom:22px;">
+        <div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;padding:20px;">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px;">
+            <div style="font-size:15px;font-weight:700;">Publicaciones aprobadas por semana</div>
+            <div style="font-size:12px;color:#5c6370;">Últimas 8 semanas</div>
+          </div>
+          <div style="display:flex;align-items:flex-end;gap:14px;height:180px;">
+            <sc-for list="{{ bars }}" as="b" hint-placeholder-count="8">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;height:100%;">
+              <div style="font-size:11px;font-weight:600;color:#5c6370;">{{ b.value }}</div>
+              <div style="{{ b.style }}width:100%;border-radius:6px 6px 2px 2px;"></div>
+              <div style="font-size:11px;color:#5c6370;">{{ b.label }}</div>
+            </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;padding:20px;">
+          <div style="font-size:15px;font-weight:700;margin-bottom:12px;">Requiere atención</div>
+          <sc-for list="{{ attention }}" as="a" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid #eef1f5;">
+            <div style="min-width:0;">
+              <div style="font-size:13px;font-weight:600;">{{ a.title }}</div>
+              <div style="font-size:11.5px;color:#5c6370;margin-top:2px;">{{ a.meta }}</div>
+            </div>
+            <button type="button" class="ad-btn" onClick="{{ a.onClick }}" style="border:1px solid #dde1e8;background:#fff;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">{{ a.cta }}</button>
+          </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="font-size:15px;font-weight:700;margin-bottom:12px;">Pendientes de moderación</div>
+    </sc-if>
+
+
+    <sc-if value="{{ isSubs }}" hint-placeholder-val="{{ false }}">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:22px;">
+        <sc-for list="{{ subKpis }}" as="k" hint-placeholder-count="6">
+        <div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;padding:16px;"><div style="font-size:12px;color:#5c6370;font-weight:600;">{{ k.label }}</div><div style="font-size:24px;font-weight:700;letter-spacing:-0.02em;margin-top:6px;{{ k.style }}">{{ k.value }}</div></div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isCatalogo }}" hint-placeholder-val="{{ false }}">
+      <div style="font-size:13px;color:#5c6370;line-height:1.5;margin-bottom:16px;max-width:720px;">Marca → Modelo → Generación → Versión. Lo que desactives deja de aparecer al publicar y en los filtros; las publicaciones que ya lo usan lo conservan. Nada se elimina: lo que ya se usó queda en el historial.</div>
+      <div class="ad-split ad-split--3" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start;">
+        <div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;overflow:hidden;min-width:0;">
+  <div style="padding:14px 16px;border-bottom:1px solid #eef1f5;"><div style="font-size:14px;font-weight:700;">Marcas</div><div style="display:flex;gap:6px;margin-top:10px;"><input value="{{ newBrand }}" onChange="{{ onNewBrand }}" placeholder="Nueva marca" aria-label="Nueva marca" style="font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;flex:1;min-width:0;"><button type="button" class="ad-primary" onClick="{{ addBrand }}" style="border:0;background:#1652f0;color:#fff;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer;">Agregar</button></div></div>
+  <sc-for list="{{ catBrands }}" as="it" hint-placeholder-count="4">
+  <div onClick="{{ it.onSelect }}" style="{{ it.rowStyle }}display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 16px;border-bottom:1px solid #f1f3f6;cursor:pointer;">
+    <div style="min-width:0;"><div style="font-size:13.5px;font-weight:600;{{ it.nameStyle }}">{{ it.name }}</div><div style="font-size:11.5px;color:#5c6370;">{{ it.meta }}</div></div>
+    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;"><span class="{{ it.statusClass }}">{{ it.statusText }}</span><button type="button" class="ad-btn" onClick="{{ it.onRename }}" style="border:1px solid #dde1e8;background:#fff;border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;">Editar</button><button type="button" class="ad-btn" onClick="{{ it.onToggle }}" style="border:1px solid #dde1e8;background:#fff;border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;">{{ it.toggleLabel }}</button></div>
+  </div>
+  </sc-for>
+</div>
+        <div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;overflow:hidden;min-width:0;">
+  <div style="padding:14px 16px;border-bottom:1px solid #eef1f5;"><div style="font-size:14px;font-weight:700;">Modelos de {{ selBrand }}</div><div style="display:flex;gap:6px;margin-top:10px;"><input value="{{ newModel }}" onChange="{{ onNewModel }}" placeholder="Nuevo modelo" aria-label="Nuevo modelo" style="font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;flex:1;min-width:0;"><select value="{{ nf.modelType }}" onChange="{{ nfOn.modelType }}" aria-label="Tipo de vehículo" style="font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;"><sc-for list="{{ vtOpts }}" as="o"><option value="{{ o.value }}">{{ o.label }}</option></sc-for></select><button type="button" class="ad-primary" onClick="{{ addModel }}" style="border:0;background:#1652f0;color:#fff;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer;">Agregar</button></div></div>
+  <sc-for list="{{ catModels }}" as="it" hint-placeholder-count="4">
+  <div onClick="{{ it.onSelect }}" style="{{ it.rowStyle }}display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 16px;border-bottom:1px solid #f1f3f6;cursor:pointer;">
+    <div style="min-width:0;"><div style="font-size:13.5px;font-weight:600;{{ it.nameStyle }}">{{ it.name }}</div><div style="font-size:11.5px;color:#5c6370;">{{ it.meta }}</div></div>
+    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;"><span class="{{ it.statusClass }}">{{ it.statusText }}</span><button type="button" class="ad-btn" onClick="{{ it.onRename }}" style="border:1px solid #dde1e8;background:#fff;border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;">Editar</button><button type="button" class="ad-btn" onClick="{{ it.onToggle }}" style="border:1px solid #dde1e8;background:#fff;border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;">{{ it.toggleLabel }}</button></div>
+  </div>
+  </sc-for>
+</div>
+        <div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;overflow:hidden;min-width:0;">
+          <div style="padding:14px 16px;border-bottom:1px solid #eef1f5;"><div style="font-size:14px;font-weight:700;">Generaciones y versiones · {{ selModel }}</div><div style="display:flex;gap:6px;margin-top:10px;"><input value="{{ nf.gen }}" onChange="{{ nfOn.gen }}" placeholder="Nueva generación" aria-label="Nueva generación" style="font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;flex:1;min-width:0;"><input value="{{ nf.genFrom }}" onChange="{{ nfOn.genFrom }}" inputmode="numeric" placeholder="Desde (año)" aria-label="Año desde" style="font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;width:92px;"><button type="button" class="ad-primary" onClick="{{ addGen }}" style="border:0;background:#1652f0;color:#fff;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer;">Agregar</button></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;"><select value="{{ selGenValue }}" onChange="{{ onSelGen }}" aria-label="Generación de la nueva versión" style="font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;"><option value="">Generación…</option><sc-for list="{{ genOpts }}" as="o"><option value="{{ o.value }}">{{ o.label }}</option></sc-for></select><input value="{{ nf.ver }}" onChange="{{ nfOn.ver }}" placeholder="Nueva versión" aria-label="Nueva versión" style="font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;"><select value="{{ nf.verBody }}" onChange="{{ nfOn.verBody }}" aria-label="Carrocería" style="font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;"><sc-for list="{{ bodyOpts }}" as="o"><option value="{{ o.value }}">{{ o.label }}</option></sc-for></select><select value="{{ nf.verTrans }}" onChange="{{ nfOn.verTrans }}" aria-label="Transmisión" style="font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;"><sc-for list="{{ transOpts }}" as="o"><option value="{{ o.value }}">{{ o.label }}</option></sc-for></select><select value="{{ nf.verTraction }}" onChange="{{ nfOn.verTraction }}" aria-label="Tracción" style="font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;"><sc-for list="{{ tractionOpts }}" as="o"><option value="{{ o.value }}">{{ o.label }}</option></sc-for></select><input value="{{ nf.verDoors }}" onChange="{{ nfOn.verDoors }}" inputmode="numeric" placeholder="Puertas" aria-label="Puertas" style="font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;"><select value="{{ nf.verEngine }}" onChange="{{ nfOn.verEngine }}" aria-label="Motor" style="font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;grid-column:1 / -1;"><option value="">Motor…</option><sc-for list="{{ engineOpts }}" as="o"><option value="{{ o.value }}">{{ o.label }}</option></sc-for></select><button type="button" class="ad-primary" onClick="{{ addVersion }}" style="border:0;background:#1652f0;color:#fff;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer;grid-column:1 / -1;">Agregar versión</button></div></div>
+          <sc-for list="{{ catGens }}" as="g" hint-placeholder-count="2">
+            <div style="padding:10px 16px;background:#f6f7f9;display:flex;justify-content:space-between;align-items:center;gap:8px;"><div><div style="font-size:12.5px;font-weight:700;">{{ g.name }}</div><div style="font-size:11px;color:#5c6370;">{{ g.years }}</div></div><div style="display:flex;gap:6px;align-items:center;"><span class="{{ g.statusClass }}">{{ g.statusText }}</span><button type="button" class="ad-btn" onClick="{{ g.onRename }}" style="border:1px solid #dde1e8;background:#fff;border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;">Editar</button><button type="button" class="ad-btn" onClick="{{ g.onToggle }}" style="border:1px solid #dde1e8;background:#fff;border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;">{{ g.toggleLabel }}</button></div></div>
+            <sc-for list="{{ g.versions }}" as="it" hint-placeholder-count="2">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;border-bottom:1px solid #f1f3f6;">
+              <div style="min-width:0;"><div style="font-size:13px;font-weight:600;{{ it.nameStyle }}">{{ it.name }}</div><div style="font-size:11.5px;color:#5c6370;">{{ it.meta }}</div></div>
+              <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;"><span class="{{ it.statusClass }}">{{ it.statusText }}</span><button type="button" class="ad-btn" onClick="{{ it.onRename }}" style="border:1px solid #dde1e8;background:#fff;border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;">Editar</button><button type="button" class="ad-btn" onClick="{{ it.onToggle }}" style="border:1px solid #dde1e8;background:#fff;border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;">{{ it.toggleLabel }}</button></div>
+            </div>
+            </sc-for>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;overflow:hidden;margin-top:14px;max-width:760px;"><div style="padding:14px 16px;border-bottom:1px solid #eef1f5;"><div style="font-size:14px;font-weight:700;">Motores</div><div style="font-size:12.5px;color:#5c6370;margin-top:2px;">Se asignan a las versiones. El combustible del motor es el que ve la App por defecto.</div><div style="display:flex;gap:6px;margin-top:10px;"><input value="{{ nf.engine }}" onChange="{{ nfOn.engine }}" placeholder="Nuevo motor (ej: 1.6 MSI)" aria-label="Nuevo motor" style="font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;flex:1;min-width:0;"><select value="{{ nf.engineFuel }}" onChange="{{ nfOn.engineFuel }}" aria-label="Combustible" style="font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;"><sc-for list="{{ fuelOpts }}" as="o"><option value="{{ o.value }}">{{ o.label }}</option></sc-for></select><button type="button" class="ad-primary" onClick="{{ addEngine }}" style="border:0;background:#1652f0;color:#fff;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer;">Agregar</button></div></div><sc-for list="{{ catEngines }}" as="it"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;border-bottom:1px solid #f1f3f6;"><div style="min-width:0;"><div style="font-size:13px;font-weight:600;{{ it.nameStyle }}">{{ it.name }}</div><div style="font-size:11.5px;color:#5c6370;">{{ it.meta }}</div></div><div style="display:flex;align-items:center;gap:6px;flex-shrink:0;"><span class="{{ it.statusClass }}">{{ it.statusText }}</span><button type="button" class="ad-btn" onClick="{{ it.onRename }}" style="border:1px solid #dde1e8;background:#fff;border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;">Editar</button><button type="button" class="ad-btn" onClick="{{ it.onToggle }}" style="border:1px solid #dde1e8;background:#fff;border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;">{{ it.toggleLabel }}</button></div></div></sc-for></div>
+    </sc-if>
+
+    <sc-if value="{{ isPlanesAdm }}" hint-placeholder-val="{{ false }}">
+      <div style="font-size:13px;color:#5c6370;line-height:1.5;margin-bottom:16px;max-width:760px;">{{ plansNote }}</div>
+      <div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;overflow:auto;">
+        <div role="table" style="display:table;width:100%;border-collapse:collapse;font-size:13px;min-width:980px;">
+          <div role="rowgroup" style="display:table-header-group;"><div role="row" style="display:table-row;background:#f6f7f9;"><div role="columnheader" style="display:table-cell;font-weight:700;text-align:left;padding:11px 16px;font-size:11.5px;color:#5c6370;text-transform:uppercase;letter-spacing:.04em;">Plan</div><div role="columnheader" style="display:table-cell;font-weight:700;text-align:left;padding:11px 16px;font-size:11.5px;color:#5c6370;text-transform:uppercase;letter-spacing:.04em;">Precio ($)</div><div role="columnheader" style="display:table-cell;font-weight:700;text-align:left;padding:11px 16px;font-size:11.5px;color:#5c6370;text-transform:uppercase;letter-spacing:.04em;">Publicaciones activas</div><div role="columnheader" style="display:table-cell;font-weight:700;text-align:left;padding:11px 16px;font-size:11.5px;color:#5c6370;text-transform:uppercase;letter-spacing:.04em;">Destacadas incluidas</div><div role="columnheader" style="display:table-cell;font-weight:700;text-align:left;padding:11px 16px;font-size:11.5px;color:#5c6370;text-transform:uppercase;letter-spacing:.04em;">Miembros</div><div role="columnheader" style="display:table-cell;font-weight:700;text-align:left;padding:11px 16px;font-size:11.5px;color:#5c6370;text-transform:uppercase;letter-spacing:.04em;">Duración</div><div role="columnheader" style="display:table-cell;font-weight:700;text-align:left;padding:11px 16px;font-size:11.5px;color:#5c6370;text-transform:uppercase;letter-spacing:.04em;">Estado</div></div></div>
+          <div role="rowgroup" style="display:table-row-group;">
+            <sc-for list="{{ planRows }}" as="p" hint-placeholder-count="4">
+            <div role="row" style="display:table-row;border-top:1px solid #eef1f5;">
+              <div role="cell" style="display:table-cell;padding:10px 16px;"><input value="{{ p.name }}" onChange="{{ p.onName }}" readonly="{{ p.readonly }}" aria-label="Nombre del plan" style="font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;width:190px;font-weight:600;"><div style="font-size:11px;color:#5c6370;margin-top:4px;">{{ p.audienceLabel }}</div></div>
+              <div role="cell" style="display:table-cell;padding:10px 16px;"><input value="{{ p.price }}" onChange="{{ p.onPrice }}" readonly="{{ p.readonly }}" inputmode="numeric" aria-label="Precio" style="font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;width:110px;"></div>
+              <div role="cell" style="display:table-cell;padding:10px 16px;"><input value="{{ p.limit }}" onChange="{{ p.onLimit }}" readonly="{{ p.readonly }}" inputmode="numeric" aria-label="Límite de publicaciones" style="font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;width:80px;"></div>
+              <div role="cell" style="display:table-cell;padding:10px 16px;"><input value="{{ p.featured }}" onChange="{{ p.onFeatured }}" readonly="{{ p.readonly }}" inputmode="numeric" aria-label="Destacadas incluidas" style="font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;width:70px;"></div>
+              <div role="cell" style="display:table-cell;padding:10px 16px;"><input value="{{ p.members }}" onChange="{{ p.onMembers }}" readonly="{{ p.readonly }}" inputmode="numeric" aria-label="Miembros" style="font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;width:70px;"></div>
+              <div role="cell" style="display:table-cell;padding:10px 16px;"><span style="font-size:13px;color:#454b56;">{{ p.periodLabel }}</span></div>
+              <div role="cell" style="display:table-cell;padding:10px 16px;"><button type="button" class="ad-btn" onClick="{{ p.onToggle }}" style="border:1px solid #dde1e8;background:#fff;border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;"><span class="{{ p.statusClass }}" style="padding:0;background:none;">{{ p.statusText }}</span></button></div>
+            </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+      <sc-if value="{{ canEditPlans }}"><div style="margin-top:14px;"><button type="button" class="ad-primary" onClick="{{ savePlans }}" style="border:0;background:#1652f0;color:#fff;border-radius:9px;padding:12px 18px;font-size:14px;font-weight:600;cursor:pointer;">Guardar planes</button></div></sc-if>
+    </sc-if>
+
+    <sc-if value="{{ isVentasAdm }}" hint-placeholder-val="{{ false }}">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px;"><sc-for list="{{ salesKpisAdm }}" as="k" hint-placeholder-count="8"><div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;padding:16px;"><div style="font-size:12px;color:#5c6370;font-weight:600;">{{ k.label }}</div><div style="font-size:24px;font-weight:700;letter-spacing:-0.02em;margin-top:6px;">{{ k.value }}</div><div style="font-size:11.5px;color:#5c6370;margin-top:2px;">{{ k.hint }}</div></div></sc-for></div>
+      <div class="ad-split" style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:14px;">
+        <div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;overflow:auto;"><div style="padding:14px 16px;font-size:14px;font-weight:700;border-bottom:1px solid #eef1f5;">Modelos más vendidos</div><div role="table" style="display:table;width:100%;border-collapse:collapse;font-size:13px;min-width:560px;"><div role="rowgroup" style="display:table-header-group;"><div role="row" style="display:table-row;background:#f6f7f9;"><div role="columnheader" style="display:table-cell;font-weight:700;text-align:left;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Modelo</div><div role="columnheader" style="display:table-cell;font-weight:700;text-align:right;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Publicados</div><div role="columnheader" style="display:table-cell;font-weight:700;text-align:right;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Vendidos</div><div role="columnheader" style="display:table-cell;font-weight:700;text-align:right;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Precio prom. publicado</div><div role="columnheader" style="display:table-cell;font-weight:700;text-align:right;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Precio prom. vendido</div><div role="columnheader" style="display:table-cell;font-weight:700;text-align:right;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Días hasta venta</div></div></div><div role="rowgroup" style="display:table-row-group;"><sc-for list="{{ modelStats }}" as="m" hint-placeholder-count="5"><div role="row" style="display:table-row;border-top:1px solid #eef1f5;"><div role="cell" style="display:table-cell;padding:11px 16px;font-weight:600;">{{ m.name }}</div><div role="cell" style="display:table-cell;padding:11px 16px;text-align:right;">{{ m.pub }}</div><div role="cell" style="display:table-cell;padding:11px 16px;text-align:right;">{{ m.sold }}</div><div role="cell" style="display:table-cell;padding:11px 16px;text-align:right;{{ m.avgStyle }}">{{ m.avgPub }}</div><div role="cell" style="display:table-cell;padding:11px 16px;text-align:right;{{ m.avgStyle }}">{{ m.avgSold }}</div><div role="cell" style="display:table-cell;padding:11px 16px;text-align:right;{{ m.avgStyle }}">{{ m.days }}</div></div></sc-for></div></div><sc-if value="{{ noModelStats }}"><div style="padding:18px 16px;font-size:13px;color:#5c6370;">Todavía no hay ventas registradas en el período.</div></sc-if><div style="padding:10px 16px;font-size:11.5px;color:#5c6370;">Los promedios se muestran con 3 ventas o más del modelo en el período.</div></div>
+        <div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;"><div style="padding:14px 16px;font-size:14px;font-weight:700;border-bottom:1px solid #eef1f5;">Marcas con más publicaciones activas</div><sc-if value="{{ noBrandStats }}"><div style="padding:18px 16px;font-size:13px;color:#5c6370;">Sin publicaciones activas.</div></sc-if><sc-for list="{{ brandStats }}" as="b" hint-placeholder-count="5"><div style="padding:10px 16px;border-top:1px solid #f1f3f6;"><div style="display:flex;justify-content:space-between;font-size:13px;"><span style="font-weight:600;">{{ b.name }}</span><span>{{ b.value }}</span></div><div style="height:6px;border-radius:3px;background:#eef1f5;margin-top:6px;overflow:hidden;"><div style="{{ b.bar }}height:100%;background:#1652f0;border-radius:3px;"></div></div></div></sc-for></div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isPanels }}" hint-placeholder-val="{{ false }}">
+      <sc-if value="{{ showMonths }}" hint-placeholder-val="{{ false }}"><div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;"><sc-for list="{{ monthChips }}" as="pc" hint-placeholder-count="3"><button type="button" onClick="{{ pc.onClick }}" aria-pressed="{{ pc.selected }}" style="{{ pc.style }}border-radius:999px;padding:7px 13px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;">{{ pc.label }}</button></sc-for></div></sc-if>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:18px;"><sc-for list="{{ panelKpis }}" as="k" hint-placeholder-count="6"><div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;padding:16px;"><div style="font-size:12px;color:#5c6370;font-weight:600;">{{ k.label }}</div><div style="font-size:24px;font-weight:700;letter-spacing:-0.02em;margin-top:6px;">{{ k.value }}</div><div style="font-size:11.5px;color:#5c6370;margin-top:2px;">{{ k.hint }}</div></div></sc-for></div>
+      <div class="ad-panels" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:14px;align-items:start;">
+        <sc-for list="{{ panels }}" as="pn" hint-placeholder-count="3">
+        <div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;overflow:hidden;min-width:0;">
+          <div style="padding:14px 16px;border-bottom:1px solid #eef1f5;font-size:14px;font-weight:700;">{{ pn.title }}</div>
+          <div style="overflow-x:auto;"><div role="table" aria-label="{{ pn.title }}" style="display:table;width:100%;border-collapse:collapse;font-size:12.5px;">
+            <div role="rowgroup" style="display:table-header-group;"><div role="row" style="display:table-row;background:#f6f7f9;"><sc-for list="{{ pn.columns }}" as="col"><div role="columnheader" style="display:table-cell;font-weight:700;text-align:left;padding:9px 14px;font-size:11px;color:#5c6370;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap;">{{ col }}</div></sc-for></div></div>
+            <div role="rowgroup" style="display:table-row-group;"><sc-for list="{{ pn.rows }}" as="r"><div role="row" style="display:table-row;border-top:1px solid #eef1f5;"><sc-for list="{{ r.cells }}" as="c"><div role="cell" style="display:table-cell;padding:9px 14px;white-space:nowrap;">{{ c.t }}</div></sc-for></div></sc-for></div>
+          </div></div>
+          <sc-if value="{{ pn.empty }}"><div style="padding:16px;font-size:12.5px;color:#5c6370;">{{ pn.empty }}</div></sc-if>
+          <sc-if value="{{ pn.note }}"><div style="padding:10px 16px;font-size:11.5px;color:#5c6370;border-top:1px solid #f1f3f6;">{{ pn.note }}</div></sc-if>
+        </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ hasForm }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;padding:16px;margin-bottom:16px;">
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px;">{{ form.title }}</div>
+        <div style="font-size:12px;color:#5c6370;line-height:1.5;margin-bottom:12px;max-width:820px;">{{ form.note }}</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;">
+          <sc-for list="{{ form.fields }}" as="f" hint-placeholder-count="6">
+          <label style="display:grid;gap:5px;font-size:11.5px;font-weight:700;color:#5c6370;align-content:start;">{{ f.label }}
+            <sc-if value="{{ f.isText }}"><input value="{{ f.value }}" onChange="{{ f.onChange }}" style="font-family:inherit;font-size:13px;padding:9px 11px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;width:100%;"></sc-if>
+            <sc-if value="{{ f.isNum }}"><input value="{{ f.value }}" onChange="{{ f.onChange }}" inputmode="numeric" style="font-family:inherit;font-size:13px;padding:9px 11px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;width:100%;"></sc-if>
+            <sc-if value="{{ f.isDate }}"><input type="date" value="{{ f.value }}" onChange="{{ f.onChange }}" style="font-family:inherit;font-size:13px;padding:9px 11px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;width:100%;"></sc-if>
+            <sc-if value="{{ f.isArea }}"><textarea value="{{ f.value }}" onChange="{{ f.onChange }}" rows="2" style="font-family:inherit;font-size:13px;padding:9px 11px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;width:100%;resize:vertical;"></textarea></sc-if>
+            <sc-if value="{{ f.isSelect }}"><select value="{{ f.value }}" onChange="{{ f.onChange }}" style="font-family:inherit;font-size:13px;padding:9px 11px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;width:100%;"><sc-for list="{{ f.options }}" as="o"><option value="{{ o.value }}">{{ o.label }}</option></sc-for></select></sc-if>
+            <sc-if value="{{ f.hint }}"><span style="font-weight:500;font-size:11px;">{{ f.hint }}</span></sc-if>
+          </label>
+          </sc-for>
+        </div>
+        <sc-if value="{{ form.error }}"><div role="alert" style="font-size:12.5px;font-weight:600;color:#a32020;margin-top:10px;">{{ form.error }}</div></sc-if>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;"><button type="button" class="ad-primary" onClick="{{ formSubmit }}" style="border:0;background:#1652f0;color:#fff;border-radius:9px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;">{{ form.cta }}</button><sc-if value="{{ formHasCancel }}"><button type="button" class="ad-btn" onClick="{{ formCancel }}" style="border:1px solid #dde1e8;background:#fff;border-radius:9px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;">Cancelar edición</button></sc-if></div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isRetencion }}" hint-placeholder-val="{{ false }}">
+      <div style="font-size:13px;color:#5c6370;line-height:1.5;margin-bottom:16px;max-width:760px;">Cada categoría tiene su política. Borrar datos operativos o multimedia no borra la auditoría, y los registros de venta se conservan sin imágenes.</div>
+      <div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;overflow:auto;margin-bottom:18px;">
+        <div role="table" style="display:table;width:100%;border-collapse:collapse;font-size:13px;min-width:760px;"><div role="rowgroup" style="display:table-header-group;"><div role="row" style="display:table-row;background:#f6f7f9;"><div role="columnheader" style="display:table-cell;font-weight:700;text-align:left;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Dato</div><div role="columnheader" style="display:table-cell;font-weight:700;text-align:left;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Categoría</div><div role="columnheader" style="display:table-cell;font-weight:700;text-align:left;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Se conserva</div><div role="columnheader" style="display:table-cell;font-weight:700;text-align:left;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Desde</div><div role="columnheader" style="display:table-cell;font-weight:700;text-align:left;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Luego</div></div></div>
+        <div role="rowgroup" style="display:table-row-group;"><sc-for list="{{ retentionRows }}" as="r" hint-placeholder-count="8"><div role="row" style="display:table-row;border-top:1px solid #eef1f5;"><div role="cell" style="display:table-cell;padding:10px 16px;font-weight:600;">{{ r.label }}</div><div role="cell" style="display:table-cell;padding:10px 16px;"><span class="{{ r.catClass }}">{{ r.cat }}</span></div><div role="cell" style="display:table-cell;padding:10px 16px;"><div style="display:flex;gap:6px;align-items:center;"><input value="{{ r.value }}" onChange="{{ r.onValue }}" inputmode="numeric" aria-label="Duración: {{ r.label }}" style="font-family:inherit;font-size:13px;padding:9px 11px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;width:100%;width:70px;"><span style="font-size:12.5px;color:#5c6370;">{{ r.unit }}</span></div></div><div role="cell" style="display:table-cell;padding:10px 16px;color:#454b56;">{{ r.from }}</div><div role="cell" style="display:table-cell;padding:10px 16px;color:#454b56;">{{ r.then }}</div></div></sc-for></div></div>
+      </div>
+      <button type="button" class="ad-primary" onClick="{{ saveRetention }}" style="border:0;background:#1652f0;color:#fff;border-radius:9px;padding:11px 16px;font-size:13.5px;font-weight:600;cursor:pointer;margin-bottom:24px;">Guardar política</button>
+      <div style="font-size:15px;font-weight:700;margin-bottom:10px;">Cola de eliminación de imágenes</div><sc-if value="{{ noMedia }}"><div style="font-size:12.5px;color:#5c6370;margin-bottom:10px;">No hay fotos programadas para eliminar.</div></sc-if>
+      <div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;overflow:auto;">
+        <div role="table" style="display:table;width:100%;border-collapse:collapse;font-size:13px;min-width:640px;"><div role="rowgroup" style="display:table-header-group;"><div role="row" style="display:table-row;background:#f6f7f9;"><div role="columnheader" style="display:table-cell;font-weight:700;text-align:left;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Publicación</div><div role="columnheader" style="display:table-cell;font-weight:700;text-align:left;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Motivo</div><div role="columnheader" style="display:table-cell;font-weight:700;text-align:left;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Fotos</div><div role="columnheader" style="display:table-cell;font-weight:700;text-align:left;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Programada</div><div role="columnheader" style="display:table-cell;font-weight:700;text-align:left;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Estado</div><div role="columnheader" aria-label="Acciones" style="display:table-cell;font-weight:700;"></div></div></div>
+        <div role="rowgroup" style="display:table-row-group;"><sc-for list="{{ mediaQueue }}" as="m" hint-placeholder-count="3"><div role="row" style="display:table-row;border-top:1px solid #eef1f5;"><div role="cell" style="display:table-cell;padding:10px 16px;font-weight:600;">{{ m.title }}</div><div role="cell" style="display:table-cell;padding:10px 16px;">{{ m.reason }}</div><div role="cell" style="display:table-cell;padding:10px 16px;">{{ m.photos }}</div><div role="cell" style="display:table-cell;padding:10px 16px;">{{ m.scheduled }}</div><div role="cell" style="display:table-cell;padding:10px 16px;"><span class="{{ m.statusClass }}">{{ m.status }}</span></div><div role="cell" style="display:table-cell;padding:8px 16px;text-align:right;"><sc-if value="{{ m.canDelete }}" hint-placeholder-val="{{ false }}"><button type="button" class="ad-btn" onClick="{{ m.onDelete }}" style="border:1px solid #f1c4c4;background:#fff;color:#a32020;border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:600;cursor:pointer;">Eliminar ahora</button></sc-if></div></div></sc-for></div></div>
+        <div style="padding:10px 16px;font-size:11.5px;color:#5c6370;">{{ mediaNote }}</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isConfig }}" hint-placeholder-val="{{ false }}">
+      <div style="font-size:12.5px;color:#5c6370;line-height:1.5;margin-bottom:16px;max-width:720px;">Estado real de las integraciones. Las credenciales se configuran por variables de entorno en el servidor y nunca se muestran acá.</div><div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;max-width:720px;"><sc-for list="{{ integrations }}" as="it"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid #f1f3f6;"><div><div style="font-size:14px;font-weight:700;">{{ it.name }}</div><div style="font-size:12px;color:#5c6370;margin-top:2px;">{{ it.hint }}</div></div><span class="{{ it.cls }}">{{ it.status }}</span></div></sc-for></div><div style="font-size:15px;font-weight:700;margin:22px 0 10px;">Remitentes de email</div><div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;max-width:720px;"><sc-for list="{{ emailSenders }}" as="es"><div style="display:flex;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid #f1f3f6;font-size:13px;flex-wrap:wrap;"><span style="color:#5c6370;">{{ es.k }}</span><span style="font-weight:600;word-break:break-all;">{{ es.v }}</span></div></sc-for></div>
+    </sc-if>
+
+    <sc-if value="{{ hasTable }}" hint-placeholder-val="{{ true }}">
+    <div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;overflow:hidden;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid #eef1f5;flex-wrap:wrap;">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <sc-for list="{{ statusChips }}" as="c" hint-placeholder-count="4">
+            <button type="button" onClick="{{ c.onClick }}" aria-pressed="{{ c.selected }}" style="{{ c.style }}border-radius:999px;padding:7px 13px;font-size:12.5px;font-weight:600;cursor:pointer;">{{ c.label }}</button>
+          </sc-for>
+        </div>
+        <div style="font-size:12.5px;color:#5c6370;">{{ resultLabel }}</div>
+      </div>
+      <div style="overflow-x:auto;">
+      <div role="table" class="ad-table" aria-label="{{ sectionTitle }}" style="display:table;width:100%;border-collapse:collapse;font-size:13px;">
+        <div role="rowgroup" class="ad-table__head" style="display:table-header-group;">
+          <div role="row" style="display:table-row;background:#f6f7f9;">
+            <sc-for list="{{ columns }}" as="col" hint-placeholder-count="5">
+              <div role="columnheader" style="display:table-cell;font-weight:700;text-align:left;padding:11px 16px;font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#5c6370;">{{ col }}</div>
+            </sc-for>
+            <div role="columnheader" aria-label="Acciones" style="display:table-cell;font-weight:700;padding:11px 16px;"></div>
+          </div>
+        </div>
+        <div role="rowgroup" style="display:table-row-group;">
+          <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
+          <div role="row" class="ad-row" style="display:table-row;border-top:1px solid #eef1f5;">
+            <sc-for list="{{ r.cells }}" as="cell" hint-placeholder-count="5">
+              <div role="cell" class="ad-cell" data-label="{{ cell.label }}" style="display:table-cell;padding:13px 16px;vertical-align:middle;{{ cell.style }}">
+                <sc-if value="{{ cell.badge }}" hint-placeholder-val="{{ false }}"><span class="{{ cell.badge }}">{{ cell.text }}</span></sc-if>
+                <sc-if value="{{ cell.plain }}" hint-placeholder-val="{{ true }}">{{ cell.text }}</sc-if>
+              </div>
+            </sc-for>
+            <div role="cell" class="ad-acts" style="display:table-cell;padding:10px 16px;text-align:right;white-space:nowrap;">
+              <sc-for list="{{ r.acts }}" as="a" hint-placeholder-count="1"><button type="button" class="ad-btn" onClick="{{ a.onClick }}" style="{{ a.style }}border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;margin-left:6px;">{{ a.label }}</button></sc-for>
+              <button type="button" class="ad-btn" onClick="{{ r.onSecondary }}" style="border:1px solid #dde1e8;background:#fff;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;margin-left:6px;">Ver</button>
+            </div>
+          </div>
+          </sc-for>
+        </div>
+      </div>
+      </div>
+      <sc-if value="{{ noRows }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:40px 16px;text-align:center;">
+          <div style="font-size:15px;font-weight:700;">Sin resultados</div>
+          <div style="font-size:13px;color:#5c6370;margin-top:4px;">Probá con otro estado o limpiá la búsqueda.</div>
+        </div>
+      </sc-if>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid #eef1f5;font-size:12.5px;color:#5c6370;">
+        <span>{{ pageLabel }}</span>
+        <div style="display:flex;gap:6px;">
+          <button type="button" class="ad-btn" onClick="{{ prevPage }}" disabled="{{ noPrev }}" style="border:1px solid #dde1e8;background:#fff;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;">Anterior</button>
+          <button type="button" class="ad-btn" onClick="{{ nextPage }}" disabled="{{ noNext }}" style="border:1px solid #dde1e8;background:#fff;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;">Siguiente</button>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+  </main>
+</div>
+
+<sc-if value="{{ pendingOpen }}" hint-placeholder-val="{{ false }}">
+<div style="position:fixed;inset:0;background:rgba(20,23,31,.45);display:flex;align-items:center;justify-content:center;z-index:70;" onClick="{{ cancelPending }}">
+  <div role="dialog" aria-modal="true" aria-label="Confirmar acción" onClick="{{ stop }}" style="background:#fff;border-radius:16px;padding:24px;width:440px;max-width:92vw;box-shadow:0 20px 48px rgba(20,23,31,.25);">
+    <div style="font-size:18px;font-weight:700;">{{ pendingTitle }}</div>
+    <div style="font-size:13px;color:#5c6370;margin:6px 0 14px;line-height:1.5;">{{ pendingHint }}</div>
+    <sc-if value="{{ pendingHasOptions }}"><label style="display:grid;gap:6px;font-size:12px;font-weight:700;color:#5c6370;margin-bottom:10px;">{{ pendingOptionLabel }}<select value="{{ pendingChoice }}" onChange="{{ onPendingChoice }}" style="font-family:inherit;font-size:14px;padding:10px 12px;border:1px solid #dde1e8;border-radius:9px;color:#14171f;background:#fff;"><sc-for list="{{ pendingOptions }}" as="o"><option value="{{ o.value }}">{{ o.label }}</option></sc-for></select></label></sc-if>
+    <label style="display:grid;gap:6px;font-size:12px;font-weight:700;color:#5c6370;">{{ pendingLabel }}<textarea value="{{ pendingReason }}" onChange="{{ onPendingReason }}" rows="3" style="font-family:inherit;font-size:14px;padding:10px 12px;border:1px solid #dde1e8;border-radius:9px;color:#14171f;resize:vertical;"></textarea></label>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;"><button type="button" class="ad-btn" onClick="{{ cancelPending }}" style="border:1px solid #dde1e8;background:#fff;border-radius:9px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;">Cancelar</button><button type="button" onClick="{{ confirmPending }}" disabled="{{ pendingNoReason }}" style="{{ pendingCtaStyle }}border:0;color:#fff;border-radius:9px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;">{{ pendingCta }}</button></div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ detailOpen }}">
+<div style="position:fixed;inset:0;background:rgba(20,23,31,.45);display:flex;justify-content:flex-end;z-index:60;" onClick="{{ closeDetail }}"><div role="dialog" aria-modal="true" aria-label="Detalle" onClick="{{ stop }}" class="ad-drawer" style="background:#fff;width:600px;max-width:100vw;height:100vh;height:100dvh;overflow-y:auto;padding:24px;box-shadow:0 20px 48px rgba(20,23,31,.25);"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;"><div style="min-width:0;"><div style="font-size:12px;color:#5c6370;">{{ dt.code }}</div><div style="font-size:20px;font-weight:700;letter-spacing:-0.01em;">{{ dt.title }}</div></div><button type="button" class="ad-btn" onClick="{{ closeDetail }}" style="border:1px solid #dde1e8;background:#fff;border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;padding:8px 12px;font-size:12.5px;">Cerrar</button></div><div style="margin:10px 0 12px;"><span class="{{ dt.statusClass }}">{{ dt.status }}</span></div><sc-if value="{{ dt.reason }}"><div style="background:#fbeedc;color:#8c560a;border-radius:9px;padding:10px 12px;font-size:12.5px;margin-bottom:12px;">Motivo: {{ dt.reason }}</div></sc-if><div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:12px;"><sc-for list="{{ dt.images }}" as="im"><img src="{{ im.url }}" alt="" loading="lazy" style="width:100%;height:100px;object-fit:cover;border-radius:8px;background:#eef1f5;"></sc-for></div><sc-if value="{{ dt.noImages }}"><div style="font-size:12.5px;color:#5c6370;margin-bottom:12px;">Sin fotos.</div></sc-if><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;"><sc-for list="{{ dt.acts }}" as="a"><button type="button" class="ad-btn" onClick="{{ a.onClick }}" style="{{ a.style }}border-radius:8px;padding:8px 14px;font-size:12.5px;font-weight:600;cursor:pointer;">{{ a.label }}</button></sc-for></div><sc-if value="{{ dt.hasChecklist }}"><div style="border:1px solid #eef1f5;border-radius:12px;padding:12px;margin-bottom:16px;"><div style="font-size:14px;font-weight:700;">Checklist de revisión</div><div style="font-size:11.5px;color:#5c6370;margin:4px 0 10px;line-height:1.45;">{{ dt.checklistNote }}</div><div style="display:grid;gap:6px;"><sc-for list="{{ dt.checklist }}" as="ck"><button type="button" onClick="{{ ck.onToggle }}" role="checkbox" aria-checked="{{ ck.checked }}" style="{{ ck.style }}display:flex;align-items:center;gap:10px;text-align:left;border:1px solid #dde1e8;background:#fff;border-radius:9px;padding:9px 11px;font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;color:#14171f;"><span aria-hidden="true" style="width:18px;height:18px;border:1.5px solid currentColor;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">{{ ck.mark }}</span><span>{{ ck.label }}</span></button></sc-for></div><sc-if value="{{ dt.canEvidence }}"><label style="display:grid;gap:6px;font-size:12px;font-weight:700;color:#5c6370;margin-top:12px;">Notas de evidencia (qué se revisó, dónde, con quién)<textarea value="{{ dt.evidence }}" onChange="{{ dt.onEvidence }}" rows="3" style="font-family:inherit;font-size:13px;padding:9px 11px;border:1px solid #dde1e8;border-radius:9px;color:#14171f;resize:vertical;"></textarea></label><button type="button" class="ad-btn" onClick="{{ dt.saveEvidence }}" style="margin-top:8px;border:1px solid #dde1e8;background:#fff;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;">Guardar notas</button></sc-if></div></sc-if><div role="table" style="display:table;width:100%;border-collapse:collapse;font-size:13px;"><div role="rowgroup" style="display:table-row-group;"><sc-for list="{{ dt.rows }}" as="r"><div role="row" style="display:table-row;border-top:1px solid #eef1f5;"><div role="cell" style="display:table-cell;padding:9px 0;color:#5c6370;width:40%;vertical-align:top;">{{ r.k }}</div><div role="cell" style="display:table-cell;padding:9px 0;font-weight:600;word-break:break-word;">{{ r.v }}</div></div></sc-for></div></div><sc-if value="{{ dt.hasDescription }}"><div style="font-size:14px;font-weight:700;margin:18px 0 6px;">Descripción</div><div style="font-size:13px;line-height:1.55;white-space:pre-wrap;color:#454b56;">{{ dt.description }}</div></sc-if><sc-if value="{{ dt.hasHistory }}"><div style="font-size:14px;font-weight:700;margin:18px 0 6px;">Historial</div><sc-for list="{{ dt.history }}" as="h"><div style="display:flex;gap:10px;padding:7px 0;border-top:1px solid #f1f3f6;font-size:12.5px;"><span style="color:#5c6370;white-space:nowrap;">{{ h.when }}</span><span>{{ h.what }}</span></div></sc-for></sc-if></div></div>
+</sc-if>
+
+<sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+  <div role="status" aria-live="polite" style="position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:80;max-width:calc(100vw - 32px);width:max-content;text-align:center;background:#14171f;color:#fff;font-size:13px;font-weight:600;padding:11px 18px;border-radius:18px;box-shadow:0 6px 18px rgba(20,23,31,.2);">{{ toast }}</div>
+</sc-if>
+</x-dc>

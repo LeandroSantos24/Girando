@@ -1,0 +1,12 @@
+/* Sora autoalojada (sin Google Fonts: menos terceros, CSP más estricta, sin fuga de IP de visitantes) */
+@font-face{font-family:'Sora';font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/sora-latin-400-normal.woff2) format('woff2');}
+@font-face{font-family:'Sora';font-style:normal;font-weight:500;font-display:swap;src:url(/fonts/sora-latin-400-normal.woff2) format('woff2');}
+@font-face{font-family:'Sora';font-style:normal;font-weight:600;font-display:swap;src:url(/fonts/sora-latin-600-normal.woff2) format('woff2');}
+@font-face{font-family:'Sora';font-style:normal;font-weight:700;font-display:swap;src:url(/fonts/sora-latin-700-normal.woff2) format('woff2');}
+@font-face{font-family:'Sora';font-style:normal;font-weight:800;font-display:swap;src:url(/fonts/sora-latin-800-normal.woff2) format('woff2');}
+/* En pantallas chicas la app ocupa toda la pantalla (sin el marco de iPhone del diseño) */
+@media (max-width: 520px){
+  body{padding:0!important;display:block!important;}
+  [data-om-starter="ios-frame"]{width:100vw!important;height:100dvh!important;border-radius:0!important;box-shadow:none!important;}
+  [data-om-starter="ios-frame"] > div:first-child, [data-om-starter="ios-frame"] > div:nth-child(2){display:none!important;}
+}

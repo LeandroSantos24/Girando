@@ -1,0 +1,29 @@
+[project]
+name = "girando-api"
+version = "0.1.0"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+pythonpath = ["."]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 160
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "BLE", "SIM"]
+ignore = ["S101", "S608", "SIM102", "S110", "B008", "S105", "S106", "E501", "SIM105", "B904"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S", "B017"]
+"migrations/*" = ["E402"]
+
+[tool.bandit]
+# B608: todas las consultas usan parámetros ligados (:param). Las partes interpoladas con f-string son
+# fragmentos constantes del código (columnas/tablas de listas blancas, WHERE con placeholders); nunca datos
+# del usuario. Revisado a mano: app/services/search_service.py, listing_service.py y routers/*.
+# B110: los try/except/pass son intencionales (cerrar sesión sin sesión válida, normalización opcional).
+skips = ["B608", "B110"]

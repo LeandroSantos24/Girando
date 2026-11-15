@@ -1,0 +1,84 @@
+# Girando — entorno local completo:  cp .env.example .env && docker compose up
+#   App    http://localhost:3100        Admin  http://localhost:3100/admin
+#   API    http://localhost:8100        Docs   http://localhost:8100/docs
+# Los puertos se publican solo en 127.0.0.1 (no quedan expuestos a la red local).
+name: girando
+
+x-api-env: &api-env
+  DATABASE_URL: postgresql+psycopg://girando_api:${DB_API_PASSWORD}@db:5432/${POSTGRES_DB:-girando}
+  DATABASE_OWNER_URL: postgresql+psycopg://${POSTGRES_USER:-girando}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-girando}
+  REDIS_URL: redis://redis:6379/0
+  MEDIA_ROOT: /data/media
+  TRUSTED_PROXIES: web
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-girando}
+      POSTGRES_USER: ${POSTGRES_USER:-girando}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Definí POSTGRES_PASSWORD en .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no"]   # solo contadores de rate limit: nada que persistir
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: { context: ./backend, target: base }
+    restart: unless-stopped
+    env_file: .env
+    environment: *api-env
+    volumes:
+      - media:/data/media
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    ports:
+      - "127.0.0.1:${API_PORT:-8100}:8000"
+
+  worker:   # vencimientos, retención (fotos vendidas, patentes), agregados de estadísticas, cotización USD
+    build: { context: ./backend, target: base }
+    restart: unless-stopped
+    env_file: .env
+    environment: *api-env
+    command: ["python", "-m", "app.cli", "jobs", "--loop", "300"]
+    volumes:
+      - media:/data/media
+    depends_on:
+      api: { condition: service_healthy }
+
+  web:
+    build: ./web
+    restart: unless-stopped
+    depends_on:
+      api: { condition: service_healthy }
+    ports:
+      - "127.0.0.1:${WEB_PORT:-3100}:8080"
+
+  tests:    # make test → corre pytest contra un PostgreSQL real (crea y borra la base girando_test)
+    profiles: ["test"]
+    build: { context: ./backend, target: dev }
+    env_file: .env
+    environment:
+      TEST_DATABASE_ADMIN_URL: postgresql+psycopg://${POSTGRES_USER:-girando}:${POSTGRES_PASSWORD}@db:5432/postgres
+    command: ["python", "-m", "pytest", "-q", "-p", "no:cacheprovider"]
+    depends_on:
+      db: { condition: service_healthy }
+
+volumes:
+  pgdata:
+  media:

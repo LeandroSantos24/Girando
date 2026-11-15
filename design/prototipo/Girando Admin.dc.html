@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="./girando-data.js"></script>
+  <script src="./girando-store.js"></script>
+  <style>
+    *{box-sizing:border-box;}
+    body{margin:0;background:#f6f7f9;font-family:'Sora',sans-serif;color:#14171f;}
+    a{color:#0d3399;text-decoration:none;}
+    a:hover{color:#1652f0;}
+    button{font-family:inherit;}
+    button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #1652f0;outline-offset:2px;}
+    .ad-nav:hover{background:#eef1f5;}
+    .ad-row:hover{background:#f6f7f9;}
+    .ad-btn:hover{border-color:#1652f0;color:#0d3399;}
+    .ad-primary:hover{background:#1140c4;}
+    .tg{display:inline-flex;align-items:center;font-weight:700;font-size:11px;padding:4px 10px;border-radius:999px;white-space:nowrap;}
+    .tg-ok{background:#e3f4ea;color:#1a6b40;}
+    .tg-warn{background:#fbeedc;color:#8c560a;}
+    .tg-bad{background:#fbe7e7;color:#a32020;}
+    .tg-info{background:#e9eefe;color:#0d3399;}
+    .tg-muted{background:#eef1f5;color:#454b56;}
+  </style>
+</helmet>
+<div style="display:grid;grid-template-columns:240px minmax(0,1fr);min-height:100vh;">
+  <aside style="background:#fff;border-right:1px solid #eef1f5;padding:22px 14px;display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;gap:10px;padding:0 8px 22px;">
+      <img src="assets/logo-full.png" alt="Girando" style="height:28px;width:auto;">
+      <span style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:#14171f;color:#fff;padding:3px 7px;border-radius:5px;">Admin</span>
+    </div>
+    <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="12">
+      <sc-if value="{{ n.isHeader }}" hint-placeholder-val="{{ false }}"><div style="font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#9aa0ab;padding:14px 12px 4px;">{{ n.label }}</div></sc-if>
+      <sc-if value="{{ n.isItem }}" hint-placeholder-val="{{ true }}"><button type="button" class="ad-nav" onClick="{{ n.onClick }}" aria-current="{{ n.current }}" style="{{ n.style }}display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;border:0;text-align:left;padding:8px 12px;border-radius:9px;cursor:pointer;font-size:13px;">
+        <span>{{ n.label }}</span>
+        <sc-if value="{{ n.count }}" hint-placeholder-val="{{ false }}"><span class="tg tg-bad" style="font-size:10px;padding:2px 8px;">{{ n.count }}</span></sc-if>
+      </button></sc-if>
+    </sc-for>
+    <div style="margin-top:auto;padding:14px 12px 0;border-top:1px solid #eef1f5;font-size:12px;color:#5c6370;">
+      <div style="font-weight:700;color:#14171f;">Sofía Ruiz</div>
+      <div>Moderación · Mendoza</div>
+      <a href="Girando Autos.dc.html" style="display:inline-block;margin-top:10px;font-weight:600;">← Volver a la app</a>
+      <button type="button" onClick="{{ resetDemo }}" style="display:block;margin-top:10px;border:0;background:none;padding:0;font-family:inherit;font-size:12px;color:#a32020;font-weight:600;cursor:pointer;">Restablecer datos de ejemplo</button>
+    </div>
+  </aside>
+
+  <main style="padding:28px 36px 60px;min-width:0;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:26px;">
+      <div>
+        <div style="font-size:12px;color:#5c6370;margin-bottom:4px;">Admin / {{ sectionTitle }}</div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><h1 style="margin:0;font-size:26px;font-weight:700;letter-spacing:-0.02em;">{{ sectionTitle }}</h1><span class="tg tg-muted">{{ dataLabel }}</span></div>
+      </div>
+      <input value="{{ query }}" onChange="{{ onQuery }}" placeholder="Buscar usuarios, publicaciones, reportes…" aria-label="Buscar" style="width:340px;max-width:100%;font-family:inherit;font-size:13.5px;padding:11px 14px;border:1px solid #dde1e8;border-radius:9px;background:#fff;">
+    </div>
+
+    <sc-if value="{{ showPeriod }}" hint-placeholder-val="{{ true }}"><div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;"><sc-for list="{{ periodChips }}" as="pc" hint-placeholder-count="5"><button type="button" onClick="{{ pc.onClick }}" aria-pressed="{{ pc.selected }}" style="{{ pc.style }}border-radius:999px;padding:7px 13px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;">{{ pc.label }}</button></sc-for></div></sc-if>
+    <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ true }}">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:22px;">
+        <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+        <div onClick="{{ k.onClick }}" style="background:#fff;border:1px solid #eef1f5;border-radius:14px;padding:18px;cursor:pointer;">
+          <div style="font-size:12.5px;color:#5c6370;font-weight:600;">{{ k.label }}</div>
+          <div style="font-size:30px;font-weight:700;letter-spacing:-0.03em;margin:8px 0 4px;">{{ k.value }}</div>
+          <div style="font-size:12px;font-weight:600;{{ k.deltaStyle }}">{{ k.delta }}</div>
+        </div>
+        </sc-for>
+      </div>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px;margin-bottom:22px;">
+        <div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;padding:20px;">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px;">
+            <div style="font-size:15px;font-weight:700;">Publicaciones nuevas por semana</div>
+            <div style="font-size:12px;color:#5c6370;">Últimas 8 semanas</div>
+          </div>
+          <div style="display:flex;align-items:flex-end;gap:14px;height:180px;">
+            <sc-for list="{{ bars }}" as="b" hint-placeholder-count="8">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;height:100%;">
+              <div style="font-size:11px;font-weight:600;color:#5c6370;">{{ b.value }}</div>
+              <div style="{{ b.style }}width:100%;border-radius:6px 6px 2px 2px;"></div>
+              <div style="font-size:11px;color:#5c6370;">{{ b.label }}</div>
+            </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;padding:20px;">
+          <div style="font-size:15px;font-weight:700;margin-bottom:12px;">Requiere atención</div>
+          <sc-for list="{{ attention }}" as="a" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid #eef1f5;">
+            <div style="min-width:0;">
+              <div style="font-size:13px;font-weight:600;">{{ a.title }}</div>
+              <div style="font-size:11.5px;color:#5c6370;margin-top:2px;">{{ a.meta }}</div>
+            </div>
+            <button type="button" class="ad-btn" onClick="{{ a.onClick }}" style="border:1px solid #dde1e8;background:#fff;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">{{ a.cta }}</button>
+          </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="font-size:15px;font-weight:700;margin-bottom:12px;">Últimas publicaciones</div>
+    </sc-if>
+
+
+    <sc-if value="{{ isSubs }}" hint-placeholder-val="{{ false }}">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:22px;">
+        <sc-for list="{{ subKpis }}" as="k" hint-placeholder-count="6">
+        <div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;padding:16px;"><div style="font-size:12px;color:#5c6370;font-weight:600;">{{ k.label }}</div><div style="font-size:24px;font-weight:700;letter-spacing:-0.02em;margin-top:6px;{{ k.style }}">{{ k.value }}</div></div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isCatalogo }}" hint-placeholder-val="{{ false }}">
+      <div style="font-size:13px;color:#5c6370;line-height:1.5;margin-bottom:16px;max-width:720px;">Marca → Modelo → Generación → Versión. Lo que desactives deja de aparecer al publicar y en los filtros; las publicaciones que ya lo usan lo conservan. Solo se pueden eliminar opciones sin publicaciones.</div>
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start;">
+        <div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;overflow:hidden;min-width:0;">
+  <div style="padding:14px 16px;border-bottom:1px solid #eef1f5;"><div style="font-size:14px;font-weight:700;">Marcas</div><div style="display:flex;gap:6px;margin-top:10px;"><input value="{{ newBrand }}" onChange="{{ onNewBrand }}" placeholder="Nueva marca" aria-label="Nueva marca" style="font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;flex:1;min-width:0;"><button type="button" class="ad-primary" onClick="{{ addBrand }}" style="border:0;background:#1652f0;color:#fff;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer;">Agregar</button></div></div>
+  <sc-for list="{{ catBrands }}" as="it" hint-placeholder-count="4">
+  <div onClick="{{ it.onSelect }}" style="{{ it.rowStyle }}display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 16px;border-bottom:1px solid #f1f3f6;cursor:pointer;">
+    <div style="min-width:0;"><div style="font-size:13.5px;font-weight:600;{{ it.nameStyle }}">{{ it.name }}</div><div style="font-size:11.5px;color:#5c6370;">{{ it.meta }}</div></div>
+    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;"><span class="{{ it.statusClass }}">{{ it.statusText }}</span><button type="button" class="ad-btn" onClick="{{ it.onToggle }}" style="border:1px solid #dde1e8;background:#fff;border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;">{{ it.toggleLabel }}</button></div>
+  </div>
+  </sc-for>
+</div>
+        <div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;overflow:hidden;min-width:0;">
+  <div style="padding:14px 16px;border-bottom:1px solid #eef1f5;"><div style="font-size:14px;font-weight:700;">Modelos de {{ selBrand }}</div><div style="display:flex;gap:6px;margin-top:10px;"><input value="{{ newModel }}" onChange="{{ onNewModel }}" placeholder="Nuevo modelo" aria-label="Nuevo modelo" style="font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;flex:1;min-width:0;"><button type="button" class="ad-primary" onClick="{{ addModel }}" style="border:0;background:#1652f0;color:#fff;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer;">Agregar</button></div></div>
+  <sc-for list="{{ catModels }}" as="it" hint-placeholder-count="4">
+  <div onClick="{{ it.onSelect }}" style="{{ it.rowStyle }}display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 16px;border-bottom:1px solid #f1f3f6;cursor:pointer;">
+    <div style="min-width:0;"><div style="font-size:13.5px;font-weight:600;{{ it.nameStyle }}">{{ it.name }}</div><div style="font-size:11.5px;color:#5c6370;">{{ it.meta }}</div></div>
+    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;"><span class="{{ it.statusClass }}">{{ it.statusText }}</span><button type="button" class="ad-btn" onClick="{{ it.onToggle }}" style="border:1px solid #dde1e8;background:#fff;border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;">{{ it.toggleLabel }}</button></div>
+  </div>
+  </sc-for>
+</div>
+        <div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;overflow:hidden;min-width:0;">
+          <div style="padding:14px 16px;border-bottom:1px solid #eef1f5;"><div style="font-size:14px;font-weight:700;">Generaciones y versiones · {{ selModel }}</div><div style="display:flex;gap:6px;margin-top:10px;"><input value="{{ newVersion }}" onChange="{{ onNewVersion }}" placeholder="Nueva versión (en la 1.ª generación)" aria-label="Nueva versión (en la 1.ª generación)" style="font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;flex:1;min-width:0;"><button type="button" class="ad-primary" onClick="{{ addVersion }}" style="border:0;background:#1652f0;color:#fff;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer;">Agregar</button></div></div>
+          <sc-for list="{{ catGens }}" as="g" hint-placeholder-count="2">
+            <div style="padding:10px 16px;background:#f6f7f9;display:flex;justify-content:space-between;align-items:center;gap:8px;"><div><div style="font-size:12.5px;font-weight:700;">{{ g.name }}</div><div style="font-size:11px;color:#5c6370;">{{ g.years }}</div></div><button type="button" class="ad-btn" onClick="{{ g.onToggle }}" style="border:1px solid #dde1e8;background:#fff;border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;">{{ g.toggleLabel }}</button></div>
+            <sc-for list="{{ g.versions }}" as="it" hint-placeholder-count="2">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;border-bottom:1px solid #f1f3f6;">
+              <div style="min-width:0;"><div style="font-size:13px;font-weight:600;{{ it.nameStyle }}">{{ it.name }}</div><div style="font-size:11.5px;color:#5c6370;">{{ it.meta }}</div></div>
+              <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;"><span class="{{ it.statusClass }}">{{ it.statusText }}</span><button type="button" class="ad-btn" onClick="{{ it.onToggle }}" style="border:1px solid #dde1e8;background:#fff;border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;">{{ it.toggleLabel }}</button></div>
+            </div>
+            </sc-for>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isPlanesAdm }}" hint-placeholder-val="{{ false }}">
+      <div style="font-size:13px;color:#5c6370;line-height:1.5;margin-bottom:16px;max-width:720px;">La app lee los planes desde acá: precio, límite, duración y estado se cambian sin tocar el frontend. Los cambios de precio aplican desde el próximo cobro de cada suscripción.</div>
+      <div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;overflow:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:820px;">
+          <thead><tr style="background:#f6f7f9;"><th scope="col" style="text-align:left;padding:11px 16px;font-size:11.5px;color:#5c6370;text-transform:uppercase;letter-spacing:.04em;">Plan</th><th scope="col" style="text-align:left;padding:11px 16px;font-size:11.5px;color:#5c6370;text-transform:uppercase;letter-spacing:.04em;">Precio ($)</th><th scope="col" style="text-align:left;padding:11px 16px;font-size:11.5px;color:#5c6370;text-transform:uppercase;letter-spacing:.04em;">Publicaciones activas</th><th scope="col" style="text-align:left;padding:11px 16px;font-size:11.5px;color:#5c6370;text-transform:uppercase;letter-spacing:.04em;">Duración</th><th scope="col" style="text-align:left;padding:11px 16px;font-size:11.5px;color:#5c6370;text-transform:uppercase;letter-spacing:.04em;">Estado</th></tr></thead>
+          <tbody>
+            <sc-for list="{{ planRows }}" as="p" hint-placeholder-count="4">
+            <tr style="border-top:1px solid #eef1f5;">
+              <td style="padding:10px 16px;"><input value="{{ p.name }}" onChange="{{ p.onName }}" aria-label="Nombre del plan" style="font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;width:190px;font-weight:600;"><div style="font-size:11px;color:#5c6370;margin-top:4px;">{{ p.audienceLabel }}</div></td>
+              <td style="padding:10px 16px;"><input value="{{ p.price }}" onChange="{{ p.onPrice }}" inputmode="numeric" aria-label="Precio" style="font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;width:110px;"></td>
+              <td style="padding:10px 16px;"><input value="{{ p.limit }}" onChange="{{ p.onLimit }}" inputmode="numeric" aria-label="Límite de publicaciones" style="font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;width:80px;"></td>
+              <td style="padding:10px 16px;"><select value="{{ p.period }}" onChange="{{ p.onPeriod }}" aria-label="Duración" style="font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;"><option value="mes">Mensual</option><option value="trimestre">Trimestral</option><option value="año">Anual</option></select></td>
+              <td style="padding:10px 16px;"><button type="button" class="ad-btn" onClick="{{ p.onToggle }}" style="border:1px solid #dde1e8;background:#fff;border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;"><span class="{{ p.statusClass }}" style="padding:0;background:none;">{{ p.statusText }}</span></button></td>
+            </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:14px;"><button type="button" class="ad-primary" onClick="{{ savePlans }}" style="border:0;background:#1652f0;color:#fff;border-radius:9px;padding:12px 18px;font-size:14px;font-weight:600;cursor:pointer;">Guardar planes</button></div>
+    </sc-if>
+
+    <sc-if value="{{ isVentasAdm }}" hint-placeholder-val="{{ false }}">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px;"><sc-for list="{{ salesKpisAdm }}" as="k" hint-placeholder-count="8"><div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;padding:16px;"><div style="font-size:12px;color:#5c6370;font-weight:600;">{{ k.label }}</div><div style="font-size:24px;font-weight:700;letter-spacing:-0.02em;margin-top:6px;">{{ k.value }}</div><div style="font-size:11.5px;color:#5c6370;margin-top:2px;">{{ k.hint }}</div></div></sc-for></div>
+      <div style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:14px;">
+        <div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;overflow:auto;"><div style="padding:14px 16px;font-size:14px;font-weight:700;border-bottom:1px solid #eef1f5;">Modelos más vendidos</div><table style="width:100%;border-collapse:collapse;font-size:13px;min-width:560px;"><thead><tr style="background:#f6f7f9;"><th scope="col" style="text-align:left;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Modelo</th><th scope="col" style="text-align:right;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Publicados</th><th scope="col" style="text-align:right;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Vendidos</th><th scope="col" style="text-align:right;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Precio prom. publicado</th><th scope="col" style="text-align:right;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Precio prom. vendido</th><th scope="col" style="text-align:right;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Días hasta venta</th></tr></thead><tbody><sc-for list="{{ modelStats }}" as="m" hint-placeholder-count="5"><tr style="border-top:1px solid #eef1f5;"><td style="padding:11px 16px;font-weight:600;">{{ m.name }}</td><td style="padding:11px 16px;text-align:right;">{{ m.pub }}</td><td style="padding:11px 16px;text-align:right;">{{ m.sold }}</td><td style="padding:11px 16px;text-align:right;{{ m.avgStyle }}">{{ m.avgPub }}</td><td style="padding:11px 16px;text-align:right;{{ m.avgStyle }}">{{ m.avgSold }}</td><td style="padding:11px 16px;text-align:right;{{ m.avgStyle }}">{{ m.days }}</td></tr></sc-for></tbody></table><div style="padding:10px 16px;font-size:11.5px;color:#5c6370;">Los promedios se muestran con 3 ventas o más del modelo en el período.</div></div>
+        <div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;"><div style="padding:14px 16px;font-size:14px;font-weight:700;border-bottom:1px solid #eef1f5;">Marcas más publicadas</div><sc-for list="{{ brandStats }}" as="b" hint-placeholder-count="5"><div style="padding:10px 16px;border-top:1px solid #f1f3f6;"><div style="display:flex;justify-content:space-between;font-size:13px;"><span style="font-weight:600;">{{ b.name }}</span><span>{{ b.value }}</span></div><div style="height:6px;border-radius:3px;background:#eef1f5;margin-top:6px;overflow:hidden;"><div style="{{ b.bar }}height:100%;background:#1652f0;border-radius:3px;"></div></div></div></sc-for></div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isPublicidad }}" hint-placeholder-val="{{ false }}">
+      <div style="font-size:13px;color:#5c6370;line-height:1.5;margin-bottom:16px;max-width:760px;">Los banners muestran siempre la etiqueta “Publicidad”. Solo se publica material que provee la agencia, que crea Girando o que tiene licencia. No se copian imágenes de sitios externos.</div>
+      <div style="display:grid;grid-template-columns:minmax(0,1.6fr) minmax(280px,1fr);gap:14px;align-items:start;">
+        <div style="display:grid;gap:10px;">
+          <sc-for list="{{ campaignsView }}" as="c" hint-placeholder-count="3">
+          <div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;padding:12px;display:flex;gap:12px;align-items:center;">
+            <div style="width:140px;height:64px;border-radius:9px;background:#f6f7f9;background-size:cover;background-position:center;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:#5c6370;text-align:center;{{ c.imgStyle }}">{{ c.noImgLabel }}</div>
+            <div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:700;">{{ c.title }}</div><div style="font-size:12px;color:#5c6370;">{{ c.agency }} · {{ c.range }}</div><div style="font-size:12px;color:#0d3399;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.link }}</div></div>
+            <span class="{{ c.statusClass }}">{{ c.status }}</span>
+            <label class="ad-btn" style="border:1px solid #dde1e8;background:#fff;border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:600;cursor:pointer;position:relative;">Imagen<input type="file" accept="image/jpeg,image/png,image/webp" onChange="{{ c.onImage }}" style="position:absolute;width:1px;height:1px;opacity:0;"></label>
+            <button type="button" class="ad-btn" onClick="{{ c.onToggle }}" style="border:1px solid #dde1e8;background:#fff;border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:600;cursor:pointer;">{{ c.toggleLabel }}</button>
+          </div>
+          </sc-for>
+        </div>
+        <div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;padding:16px;display:grid;gap:10px;">
+          <div style="font-size:14px;font-weight:700;">Nueva campaña</div>
+          <label style="display:grid;gap:5px;font-size:11.5px;font-weight:700;color:#5c6370;">Anunciante<input value="{{ cf.agency }}" onChange="{{ cfOn.agency }}" style="font-family:inherit;font-size:13px;padding:9px 11px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;width:100%;"></label>
+          <label style="display:grid;gap:5px;font-size:11.5px;font-weight:700;color:#5c6370;">Título<input value="{{ cf.title }}" onChange="{{ cfOn.title }}" style="font-family:inherit;font-size:13px;padding:9px 11px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;width:100%;"></label>
+          <label style="display:grid;gap:5px;font-size:11.5px;font-weight:700;color:#5c6370;">Enlace<input value="{{ cf.link }}" onChange="{{ cfOn.link }}" placeholder="https://" style="font-family:inherit;font-size:13px;padding:9px 11px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;width:100%;"></label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"><label style="display:grid;gap:5px;font-size:11.5px;font-weight:700;color:#5c6370;">Inicio<input type="date" value="{{ cf.start }}" onChange="{{ cfOn.start }}" style="font-family:inherit;font-size:13px;padding:9px 11px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;width:100%;"></label><label style="display:grid;gap:5px;font-size:11.5px;font-weight:700;color:#5c6370;">Fin<input type="date" value="{{ cf.end }}" onChange="{{ cfOn.end }}" style="font-family:inherit;font-size:13px;padding:9px 11px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;width:100%;"></label></div>
+          <sc-if value="{{ cfError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="font-size:12px;font-weight:600;color:#a32020;">{{ cfError }}</div></sc-if>
+          <button type="button" class="ad-primary" onClick="{{ createCampaign }}" style="border:0;background:#1652f0;color:#fff;border-radius:9px;padding:11px 16px;font-size:13.5px;font-weight:600;cursor:pointer;">Crear como borrador</button>
+          <div style="font-size:11.5px;color:#5c6370;">Subí la imagen desde la lista y activala cuando esté aprobada. JPG, PNG o WEBP, hasta 5 MB.</div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isRetencion }}" hint-placeholder-val="{{ false }}">
+      <div style="font-size:13px;color:#5c6370;line-height:1.5;margin-bottom:16px;max-width:760px;">Cada categoría tiene su política. Borrar datos operativos o multimedia no borra la auditoría, y los registros de venta se conservan sin imágenes.</div>
+      <div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;overflow:auto;margin-bottom:18px;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:760px;"><thead><tr style="background:#f6f7f9;"><th scope="col" style="text-align:left;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Dato</th><th scope="col" style="text-align:left;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Categoría</th><th scope="col" style="text-align:left;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Se conserva</th><th scope="col" style="text-align:left;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Desde</th><th scope="col" style="text-align:left;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Luego</th></tr></thead>
+        <tbody><sc-for list="{{ retentionRows }}" as="r" hint-placeholder-count="8"><tr style="border-top:1px solid #eef1f5;"><td style="padding:10px 16px;font-weight:600;">{{ r.label }}</td><td style="padding:10px 16px;"><span class="{{ r.catClass }}">{{ r.cat }}</span></td><td style="padding:10px 16px;"><div style="display:flex;gap:6px;align-items:center;"><input value="{{ r.value }}" onChange="{{ r.onValue }}" inputmode="numeric" aria-label="Duración: {{ r.label }}" style="font-family:inherit;font-size:13px;padding:9px 11px;border:1px solid #dde1e8;border-radius:8px;background:#fff;color:#14171f;width:100%;width:70px;"><span style="font-size:12.5px;color:#5c6370;">{{ r.unit }}</span></div></td><td style="padding:10px 16px;color:#454b56;">{{ r.from }}</td><td style="padding:10px 16px;color:#454b56;">{{ r.then }}</td></tr></sc-for></tbody></table>
+      </div>
+      <button type="button" class="ad-primary" onClick="{{ saveRetention }}" style="border:0;background:#1652f0;color:#fff;border-radius:9px;padding:11px 16px;font-size:13.5px;font-weight:600;cursor:pointer;margin-bottom:24px;">Guardar política</button>
+      <div style="font-size:15px;font-weight:700;margin-bottom:10px;">Cola de eliminación de imágenes (Cloudinary)</div>
+      <div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;overflow:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:640px;"><thead><tr style="background:#f6f7f9;"><th scope="col" style="text-align:left;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Publicación</th><th scope="col" style="text-align:left;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Motivo</th><th scope="col" style="text-align:left;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Fotos</th><th scope="col" style="text-align:left;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Programada</th><th scope="col" style="text-align:left;padding:10px 16px;font-size:11px;color:#5c6370;text-transform:uppercase;">Estado</th><th scope="col" aria-label="Acciones"></th></tr></thead>
+        <tbody><sc-for list="{{ mediaQueue }}" as="m" hint-placeholder-count="3"><tr style="border-top:1px solid #eef1f5;"><td style="padding:10px 16px;font-weight:600;">{{ m.title }}</td><td style="padding:10px 16px;">{{ m.reason }}</td><td style="padding:10px 16px;">{{ m.photos }}</td><td style="padding:10px 16px;">{{ m.scheduled }}</td><td style="padding:10px 16px;"><span class="{{ m.statusClass }}">{{ m.status }}</span></td><td style="padding:8px 16px;text-align:right;"><sc-if value="{{ m.canDelete }}" hint-placeholder-val="{{ false }}"><button type="button" class="ad-btn" onClick="{{ m.onDelete }}" style="border:1px solid #f1c4c4;background:#fff;color:#a32020;border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:600;cursor:pointer;">Eliminar ahora</button></sc-if></td></tr></sc-for></tbody></table>
+        <div style="padding:10px 16px;font-size:11.5px;color:#5c6370;">Prototipo: Cloudinary no está conectado. En producción una tarea programada llama a la API de borrado y registra el resultado.</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isConfig }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;padding:24px;max-width:640px;display:grid;gap:16px;">
+        <label style="display:grid;gap:6px;font-size:12px;font-weight:700;color:#5c6370;">Límite de publicaciones · plan Gratuito<input value="1" style="font-family:inherit;font-size:14px;padding:11px 14px;border:1px solid #dde1e8;border-radius:9px;color:#14171f;"></label>
+        <label style="display:grid;gap:6px;font-size:12px;font-weight:700;color:#5c6370;">Email de soporte<input value="soporte@girando.app" style="font-family:inherit;font-size:14px;padding:11px 14px;border:1px solid #dde1e8;border-radius:9px;color:#14171f;"></label>
+        <label style="display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:14px;font-weight:600;">Moderar publicaciones antes de mostrarlas<input type="checkbox" checked="true" style="width:20px;height:20px;accent-color:#1652f0;"></label>
+        <label style="display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:14px;font-weight:600;">Solo aceptar videos de YouTube<input type="checkbox" checked="true" style="width:20px;height:20px;accent-color:#1652f0;"></label>
+        <div><button type="button" class="ad-primary" style="border:0;background:#1652f0;color:#fff;border-radius:9px;padding:12px 18px;font-size:14px;font-weight:600;cursor:pointer;">Guardar cambios</button></div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ hasTable }}" hint-placeholder-val="{{ true }}">
+    <div style="background:#fff;border:1px solid #eef1f5;border-radius:14px;overflow:hidden;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid #eef1f5;flex-wrap:wrap;">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <sc-for list="{{ statusChips }}" as="c" hint-placeholder-count="4">
+            <button type="button" onClick="{{ c.onClick }}" aria-pressed="{{ c.selected }}" style="{{ c.style }}border-radius:999px;padding:7px 13px;font-size:12.5px;font-weight:600;cursor:pointer;">{{ c.label }}</button>
+          </sc-for>
+        </div>
+        <div style="font-size:12.5px;color:#5c6370;">{{ resultLabel }}</div>
+      </div>
+      <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:720px;">
+        <thead>
+          <tr style="background:#f6f7f9;">
+            <sc-for list="{{ columns }}" as="col" hint-placeholder-count="5">
+              <th scope="col" style="text-align:left;padding:11px 16px;font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#5c6370;">{{ col }}</th>
+            </sc-for>
+            <th scope="col" aria-label="Acciones" style="padding:11px 16px;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
+          <tr class="ad-row" style="border-top:1px solid #eef1f5;">
+            <sc-for list="{{ r.cells }}" as="cell" hint-placeholder-count="5">
+              <td style="padding:13px 16px;vertical-align:middle;{{ cell.style }}">
+                <sc-if value="{{ cell.badge }}" hint-placeholder-val="{{ false }}"><span class="{{ cell.badge }}">{{ cell.text }}</span></sc-if>
+                <sc-if value="{{ cell.plain }}" hint-placeholder-val="{{ true }}">{{ cell.text }}</sc-if>
+              </td>
+            </sc-for>
+            <td style="padding:10px 16px;text-align:right;white-space:nowrap;">
+              <sc-for list="{{ r.acts }}" as="a" hint-placeholder-count="1"><button type="button" class="ad-btn" onClick="{{ a.onClick }}" style="{{ a.style }}border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;margin-left:6px;">{{ a.label }}</button></sc-for>
+              <button type="button" class="ad-btn" onClick="{{ r.onSecondary }}" style="border:1px solid #dde1e8;background:#fff;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;margin-left:6px;">Ver</button>
+            </td>
+          </tr>
+          </sc-for>
+        </tbody>
+      </table>
+      </div>
+      <sc-if value="{{ noRows }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:40px 16px;text-align:center;">
+          <div style="font-size:15px;font-weight:700;">Sin resultados</div>
+          <div style="font-size:13px;color:#5c6370;margin-top:4px;">Probá con otro estado o limpiá la búsqueda.</div>
+        </div>
+      </sc-if>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid #eef1f5;font-size:12.5px;color:#5c6370;">
+        <span>{{ pageLabel }}</span>
+        <div style="display:flex;gap:6px;">
+          <button type="button" class="ad-btn" disabled="true" style="border:1px solid #dde1e8;background:#fff;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;opacity:.5;">Anterior</button>
+          <button type="button" class="ad-btn" style="border:1px solid #dde1e8;background:#fff;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;">Siguiente</button>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+  </main>
+</div>
+
+<sc-if value="{{ pendingOpen }}" hint-placeholder-val="{{ false }}">
+<div style="position:fixed;inset:0;background:rgba(20,23,31,.45);display:flex;align-items:center;justify-content:center;z-index:70;" onClick="{{ cancelPending }}">
+  <div role="dialog" aria-modal="true" aria-label="Confirmar acción" onClick="{{ stop }}" style="background:#fff;border-radius:16px;padding:24px;width:440px;max-width:92vw;box-shadow:0 20px 48px rgba(20,23,31,.25);">
+    <div style="font-size:18px;font-weight:700;">{{ pendingTitle }}</div>
+    <div style="font-size:13px;color:#5c6370;margin:6px 0 14px;line-height:1.5;">Queda registrado en Auditoría con tu usuario, la fecha y el motivo.</div>
+    <label style="display:grid;gap:6px;font-size:12px;font-weight:700;color:#5c6370;">Motivo<textarea value="{{ pendingReason }}" onChange="{{ onPendingReason }}" rows="3" style="font-family:inherit;font-size:14px;padding:10px 12px;border:1px solid #dde1e8;border-radius:9px;color:#14171f;resize:vertical;"></textarea></label>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;"><button type="button" class="ad-btn" onClick="{{ cancelPending }}" style="border:1px solid #dde1e8;background:#fff;border-radius:9px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;">Cancelar</button><button type="button" onClick="{{ confirmPending }}" disabled="{{ pendingNoReason }}" style="border:0;background:#a32020;color:#fff;border-radius:9px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;">Confirmar</button></div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+  <div role="status" aria-live="polite" style="position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#14171f;color:#fff;font-size:13px;font-weight:600;padding:11px 18px;border-radius:999px;box-shadow:0 6px 18px rgba(20,23,31,.2);">{{ toast }}</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const B = { ok:'tg tg-ok', warn:'tg tg-warn', bad:'tg tg-bad', info:'tg tg-info', muted:'tg tg-muted' };
+const STATUS_BADGE = { 'Activa':B.ok,'Activo':B.ok,'Aprobada':B.ok,'Verificado':B.ok,'Resuelto':B.ok,'Publicada':B.ok,'Aceptada':B.ok,
+  'Pendiente':B.warn,'En revisión':B.warn,'Moderación':B.warn,
+  'Suspendido':B.bad,'Rechazada':B.bad,'Dada de baja':B.bad,'Denunciada':B.bad,
+  'Pausada':B.muted,'Cambios solicitados':B.warn,'Verificada':B.ok,'No verificada':B.muted,'Inactivo':B.muted,'Borrador':B.muted,'Otorgado':B.ok,'Revocado':B.muted,'Eliminada':B.bad,'Pago rechazado':B.bad,'En período de gracia':B.warn,'Cancelada':B.muted,'Expirada':B.bad,'Pendiente de verificación':B.warn,'Aprobado':B.ok,'Rechazado':B.bad,'Vendida':B.info,'Finalizada':B.info,'Enviada':B.muted,'Descartado':B.muted,'Oculta':B.muted };
+
+const SECTIONS = {
+  dashboard: { title:'Resumen', columns:['Publicación','Vendedor','Tipo','Fecha','Estado'], statusCol:4, statuses:['Todas','Moderación','Activa','Denunciada'], action:{ label:'Aprobar', from:['Moderación'], to:'Activa' }, total:'1.126',
+    rows:[['p1','VW Amarok V6 Highline 2022','Concesionaria Andes','Concesionaria','27 sep','Moderación'],['p2','Fiat Cronos 1.3 GSE Drive','Raina Automotores','Agencia','27 sep','Activa'],['p3','Peugeot 208 Allure 2020','Carla Suárez','Particular','26 sep','Denunciada'],['p4','Honda XR 150L 2023','Motos Cuyo','Agencia','26 sep','Activa'],['p5','Toyota Hilux SRV 2021','Pablo Díaz','Particular','25 sep','Moderación']] },
+  usuarios: { title:'Usuarios', columns:['Usuario','Email','Tipo','Alta','Estado'], statusCol:4, statuses:['Todos','Activo','Pendiente','Suspendido'], action:{ label:'Suspender', from:['Activo','Pendiente'], to:'Suspendido' }, total:'3.482',
+    rows:[['u1','Juan Martínez','juan.martinez@mail.com','Particular','mar 2026','Activo'],['u2','Raina Automotores','ventas@raina.com.ar','Agencia','ene 2026','Activo'],['u3','Concesionaria Andes','info@andes.com.ar','Concesionaria oficial','dic 2025','Activo'],['u4','Carla Suárez','carla.s@mail.com','Particular','sep 2026','Pendiente'],['u5','Autos Rápidos 24','contacto@ar24.com','Agencia','ago 2026','Suspendido'],['u6','Espacio Volkswagen','espaciovw@mail.com','Comercio','jul 2026','Activo']] },
+  publicaciones: { title:'Publicaciones', columns:['Publicación','Vendedor','Precio','Fecha','Estado'], statusCol:4, statuses:['Todas','Moderación','Activa','Pausada','Vendida','Denunciada'], action:{ label:'Aprobar', from:['Moderación','Denunciada'], to:'Activa' }, total:'1.126',
+    rows:[['p1','VW Amarok V6 Highline 2022','Concesionaria Andes','USD 38.500','27 sep','Moderación'],['p2','Fiat Cronos 1.3 GSE Drive 2024','Raina Automotores','$ 21.000.000','27 sep','Activa'],['p3','Peugeot 208 Allure 2020','Carla Suárez','$ 13.800.000','26 sep','Denunciada'],['p6','Ford Ka 1.5 SE 2017','Juan Martínez','$ 9.200.000','20 sep','Pausada'],['p7','Renault Kangoo Express 2015','Juan Martínez','$ 8.900.000','12 sep','Vendida'],['p5','Toyota Hilux SRV 2021','Pablo Díaz','$ 28.500.000','25 sep','Moderación']] },
+  postulaciones: { title:'Postulaciones', columns:['Postulante','Aviso','Empresa','Fecha','Estado'], statusCol:4, statuses:['Todas','Enviada','En revisión','Aceptada','Rechazada'], action:{ label:'Marcar revisada', from:['Enviada'], to:'En revisión' }, total:'418',
+    rows:[['a1','Juan Martínez','Chofer para Uber / Cabify','Flota Ejecutiva Mendoza','24 sep','En revisión'],['a2','Lucas Ferreyra','Camionero para reparto de carga','Transportes del Oeste','23 sep','Enviada'],['a3','Micaela Ortiz','Repartidor delivery','Rápidos Mendoza','22 sep','Aceptada'],['a4','Juan Martínez','Camionero para reparto de carga','Transportes del Oeste','18 sep','Rechazada']] },
+  reportes: { title:'Reportes y denuncias', columns:['Motivo','Publicación','Reportado por','Fecha','Estado'], statusCol:4, statuses:['Todos','Pendiente','Resuelto','Descartado'], action:{ label:'Resolver', from:['Pendiente'], to:'Resuelto' }, total:'14 pendientes',
+    rows:[['r1','Publicación sospechosa','Peugeot 208 Allure 2020','Martín Gómez','27 sep','Pendiente'],['r2','Precio incorrecto','VW Amarok V6 Highline 2022','Anónimo','26 sep','Pendiente'],['r3','Vehículo vendido','Chevrolet Onix LT 2019','Lucía Pereyra','25 sep','Pendiente'],['r4','Contenido inapropiado','Ford Ranger XLT 2018','Pablo Díaz','20 sep','Resuelto'],['r5','Información incorrecta','Fiat Cronos Drive 2022','Anónimo','18 sep','Descartado']] },
+  calificaciones: { title:'Calificaciones', columns:['De','Para','Puntuación','Fecha','Estado'], statusCol:4, statuses:['Todas','Publicada','Denunciada','Oculta'], action:{ label:'Ocultar', from:['Denunciada'], to:'Oculta' }, total:'2.031',
+    rows:[['c1','Lucía Pereyra','Juan Martínez','★★★★★','20 sep','Publicada'],['c2','Juan Martínez','Grúas San Martín','★★★★★','10 sep','Publicada'],['c3','Anónimo','Autos Rápidos 24','★☆☆☆☆','8 sep','Denunciada'],['c4','Martín Gómez','Juan Martínez','★★★★☆','3 ago','Publicada']] },
+  servicios: { title:'Servicios y comercios', columns:['Comercio','Categoría','Zona','Alta','Estado'], statusCol:4, statuses:['Todos','Pendiente','Activo','Suspendido'], action:{ label:'Aprobar', from:['Pendiente'], to:'Activo' }, total:'214',
+    rows:[['s1','Espacio Volkswagen','Repuestos · Especialista VW','Ciudad de Mendoza','jul 2026','Activo'],['s2','Grúas San Martín','Grúas · 24 hs','Las Heras','may 2026','Activo'],['s3','Gomería Express 24','Gomería · 24 hs','Godoy Cruz','sep 2026','Pendiente'],['s4','Fletes Rápidos Mendoza','Fletes','Godoy Cruz','jun 2026','Activo']] },
+  verificaciones: { title:'Verificaciones', columns:['Solicitante','Tipo de verificación','Documentación','Fecha','Estado'], statusCol:4, statuses:['Todas','Pendiente','Aprobada','Rechazada'], action:{ label:'Aprobar', from:['Pendiente'], to:'Aprobada' }, total:'23 pendientes',
+    rows:[['v1','Carla Suárez','Identidad','DNI frente y dorso','27 sep','Pendiente'],['v2','Gomería Express 24','Negocio','CUIT + habilitación','26 sep','Pendiente'],['v3','Concesionaria Andes','Concesionario oficial','Contrato de marca','24 sep','Pendiente'],['v4','Juan Martínez','Identidad','DNI frente y dorso','12 mar','Aprobada'],['v5','Autos Rápidos 24','Negocio','CUIT','2 ago','Rechazada']] },
+  suscripciones: { title:'Suscripciones', columns:['Agencia','Plan','Estado','Alta','Próximo cobro','Último pago','Monto','Método'], statusCol:2, statuses:['Todas','Activa','Pago rechazado','En período de gracia','Cancelada','Expirada'], action:{ label:'Reintentar cobro', from:['Pago rechazado','En período de gracia'], to:'Activa' }, total:'186',
+    rows:[['s1','Raina Automotores','Agencia Profesional','12/01/2026','27/10/2026','27/09/2026','$ 54.900','Mercado Pago','Activa'],['s2','Concesionaria Andes','Agencia Premium','03/12/2025','03/10/2026','03/09/2026','$ 99.900','Mercado Pago','Activa'],['s3','Motos Cuyo','Agencia Básica','15/06/2026','15/10/2026','15/08/2026','$ 24.900','Mercado Pago','Pago rechazado'],['s4','Autos Rápidos 24','Agencia Básica','02/03/2026','—','02/08/2026','$ 24.900','Transferencia','Cancelada'],['s5','Usados del Sur','Agencia Profesional','20/02/2026','20/09/2026','20/08/2026','$ 54.900','Mercado Pago','En período de gracia'],['s6','Auto Box Maipú','Agencia Básica','10/01/2026','—','10/07/2026','$ 24.900','Transferencia','Expirada']] },
+  pagos: { title:'Pagos', columns:['Agencia','Concepto','Monto','Método','Fecha','Estado'], statusCol:5, statuses:['Todos','Pendiente de verificación','Aprobado','Rechazado'], action:{ label:'Aprobar transferencia', from:['Pendiente de verificación'], to:'Aprobado' }, total:'1.024',
+    rows:[['pg1','Juan Martínez','Agencia Profesional · alta','$ 54.900','Transferencia · GIR-004821','27/09/2026','Pendiente de verificación'],['pg2','Auto Box Maipú','Agencia Básica · reactivación','$ 24.900','Transferencia · GIR-004799','26/09/2026','Pendiente de verificación'],['pg3','Raina Automotores','Agencia Profesional · septiembre','$ 54.900','Mercado Pago','27/09/2026','Aprobado'],['pg4','Motos Cuyo','Agencia Básica · septiembre','$ 24.900','Mercado Pago','15/09/2026','Rechazado']] },
+  catalogo: { title:'Catálogo de vehículos' },
+  planes: { title:'Planes' },
+  configuracion: { title:'Configuración' },
+};
+Object.assign(SECTIONS, {
+  publicaciones: { title:'Publicaciones', columns:['Publicación','Vendedor','Precio','Fecha','Alertas','Estado'], statusCol:5, statuses:['Todas','Moderación','Activa','Cambios solicitados','Pausada','Rechazada','Denunciada'], total:'1.126',
+    actions:[{ label:'Aprobar', from:['Moderación','Cambios solicitados','Denunciada'], to:'Activa', primary:true }, { label:'Solicitar cambios', from:['Moderación','Denunciada'], to:'Cambios solicitados', reason:true }, { label:'Pausar', from:['Activa','Denunciada'], to:'Pausada', reason:true }, { label:'Rechazar', from:['Moderación','Denunciada'], to:'Rechazada', reason:true, danger:true }, { label:'Eliminar', from:['Pausada','Rechazada','Denunciada'], to:'Eliminada', reason:true, danger:true }],
+    rows:[['p1','VW Amarok V6 Highline 2022','Concesionaria Andes','USD 38.500','27 sep','—','Moderación'],['p8','VW Amarok V6 Highline 2022','Concesionaria Andes','USD 38.500','27 sep','Posible duplicado de p1','Moderación'],['p2','Fiat Cronos 1.3 GSE Drive 2024','Raina Automotores','$ 21.000.000','27 sep','—','Activa'],['p3','Peugeot 208 Allure 2020','Carla Suárez','$ 13.800.000','26 sep','2 denuncias','Denunciada'],['p6','Ford Ka 1.5 SE 2017','Juan Martínez','$ 9.200.000','20 sep','—','Pausada'],['p5','Toyota Hilux SRV 2021','Pablo Díaz','$ 28.500.000','25 sep','Precio 40% bajo el promedio','Moderación']] },
+  usuarios: { ...SECTIONS.usuarios, actions:[{ label:'Suspender', from:['Activo','Pendiente'], to:'Suspendido', reason:true, danger:true }, { label:'Reactivar', from:['Suspendido'], to:'Activo', primary:true }] },
+  agencias: { title:'Agencias', columns:['Agencia','CUIT','Responsable','Publicaciones','Solicitud','Verificación'], statusCol:5, statuses:['Todas','Pendiente','Verificada','Rechazada','Suspendida','No verificada'], total:'74',
+    actions:[{ label:'Verificar', from:['Pendiente'], to:'Verificada', primary:true }, { label:'Rechazar', from:['Pendiente'], to:'Rechazada', reason:true, danger:true }, { label:'Suspender', from:['Verificada'], to:'Suspendida', reason:true, danger:true }],
+    rows:[['ag1','Raina Automotores','30-71111111-2','Hernán Raina','14','12/01/2026','Verificada'],['ag2','Concesionaria Andes','30-72222222-3','Laura Méndez','46','03/12/2025','Verificada'],['ag3','Motos Cuyo','30-73333333-4','Diego Ruiz','9','27/09/2026','Pendiente'],['ag4','Usados del Sur','30-74444444-5','Carlos Pérez','22','25/09/2026','Pendiente'],['ag5','Autos Rápidos 24','30-75555555-6','—','0','02/08/2026','Suspendida'],['ag6','Auto Box Maipú','30-76666666-7','Ana Gil','3','—','No verificada']] },
+  promociones: { title:'Promociones', columns:['Producto','Publicación / agencia','Vigencia','Precio','Impresiones','Clics','Estado'], statusCol:6, statuses:['Todas','Pendiente','Activa','Pausada','Finalizada','Cancelada'], total:'38',
+    actions:[{ label:'Aprobar', from:['Pendiente'], to:'Activa', primary:true }, { label:'Pausar', from:['Activa'], to:'Pausada', reason:true }, { label:'Reanudar', from:['Pausada'], to:'Activa' }, { label:'Cancelar', from:['Pendiente','Activa','Pausada'], to:'Cancelada', reason:true, danger:true }],
+    rows:[['pr1','Publicación destacada','VW Vento 2.0 GLI 2019','20/09 – 27/09','$ 4.900','5.210','302','Activa'],['pr2','Posición promocionada','Toyota Hilux SRV · Concesionaria Andes','22/09 – 29/09','$ 8.900','8.944','411','Activa'],['pr3','Agencia destacada','Raina Automotores','27/09 – 27/10','$ 29.900','—','—','Pendiente'],['pr4','Publicación destacada','VW Gol Trend Highline 1.6','13/09 – 20/09','$ 4.900','3.412','188','Finalizada']] },
+  productosVerif: { title:'Productos de verificación', columns:['Nombre','Descripción','Tipo','Precio','Estado'], statusCol:4, statuses:['Todos','Activo','Borrador','Inactivo'], total:'3',
+    actions:[{ label:'Activar', from:['Borrador','Inactivo'], to:'Activo', primary:true }, { label:'Desactivar', from:['Activo'], to:'Inactivo', reason:true }],
+    rows:[['vp1','Identidad','Validación de DNI del titular','Identidad','Gratis','Activo'],['vp2','Agencia verificada','Datos fiscales, habilitación y responsable','Negocio','Gratis','Activo'],['vp3','Verificación Girando','A definir: documentación y existencia del vehículo','Vehículo','A definir','Borrador']] },
+  mensajes: { title:'Conversaciones reportadas', columns:['Motivo','Reportado','Publicación','Reportó','Fecha','Estado'], statusCol:5, statuses:['Todas','Pendiente','Resuelto','Descartado'], total:'6',
+    actions:[{ label:'Bloquear usuario', from:['Pendiente'], to:'Resuelto', reason:true, danger:true }, { label:'Descartar', from:['Pendiente'], to:'Descartado', reason:true }],
+    rows:[['m1','Pide seña por adelantado','Usuario #8812','Toyota Hilux SRV 2021','Juan Martínez','26/09/2026','Pendiente'],['m2','Mensajes repetidos','Usuario #4410','Fiat Cronos Drive 2022','Carla Suárez','24/09/2026','Pendiente'],['m3','Lenguaje ofensivo','Usuario #2291','Ford Ranger XLT 2018','Pablo Díaz','15/09/2026','Resuelto']] },
+  notificaciones: { title:'Notificaciones', columns:['Evento','Canales','Tipo','Última edición','Estado'], statusCol:4, statuses:['Todas','Activo','Inactivo'], total:'18',
+    actions:[{ label:'Desactivar', from:['Activo'], to:'Inactivo', reason:true }, { label:'Activar', from:['Inactivo'], to:'Activo', primary:true }],
+    rows:[['nt1','Publicación aprobada','App + email','Transaccional','12/09/2026','Activo'],['nt2','Publicación por vencer (3 días)','App + email','Transaccional','12/09/2026','Activo'],['nt3','Nuevo mensaje','App + email','Transaccional','02/09/2026','Activo'],['nt4','Pago rechazado','App + email','Transaccional','02/09/2026','Activo'],['nt5','Baja de precio en favorito','App','Transaccional','20/08/2026','Activo'],['nt6','Novedades de Girando','Email','Comercial (requiere consentimiento)','01/08/2026','Inactivo']] },
+  emails: { title:'Emails', columns:['Plantilla','Asunto','Disparador','Tipo','Estado'], statusCol:4, statuses:['Todos','Activo','Borrador'], total:'12',
+    actions:[{ label:'Publicar', from:['Borrador'], to:'Activo', primary:true }],
+    rows:[['e1','Bienvenida','Te damos la bienvenida a Girando','Registro','Transaccional','Activo'],['e2','Verificá tu email','Confirmá tu email para empezar','Registro','Transaccional','Activo'],['e3','Recuperar contraseña','Creá una contraseña nueva','Solicitud de recuperación','Transaccional','Activo'],['e4','Publicación aprobada','Tu vehículo ya está publicado','Moderación','Transaccional','Activo'],['e5','Publicación rechazada','Necesitamos que revises tu publicación','Moderación','Transaccional','Activo'],['e6','Nueva consulta','Tenés una consulta por tu vehículo','Mensaje nuevo','Transaccional','Activo'],['e7','Suscripción activada','Tu plan ya está activo','Webhook de pago','Transaccional','Activo'],['e8','Pago rechazado','No pudimos cobrar tu plan','Webhook de pago','Transaccional','Activo'],['e9','Publicación por vencer','Tu publicación vence en 3 días','Tarea programada','Transaccional','Activo'],['e10','Novedades mensuales','Lo nuevo en Girando','Campaña','Comercial','Borrador']] },
+  consentimientos: { title:'Cookies y consentimientos', columns:['Usuario','Tipo','Versión','Fecha','Canal','Estado'], statusCol:5, statuses:['Todos','Otorgado','Revocado'], total:'12.408',
+    rows:[['cs1','Juan Martínez','Términos y condiciones','2026-09','27/09/2026 09:12','App','Otorgado'],['cs2','Juan Martínez','Política de privacidad','2026-09','27/09/2026 09:12','App','Otorgado'],['cs3','Juan Martínez','Cookies · analítica','2026-09','27/09/2026 09:13','App','Revocado'],['cs4','Lucía Pereyra','Comunicaciones comerciales','2026-09','20/09/2026 18:40','Web','Otorgado'],['cs5','Anónimo · 8f3a…','Cookies · todas','2026-09','19/09/2026 11:02','Web','Otorgado']] },
+  auditoria: { title:'Auditoría', columns:['Administrador','Acción','Sobre','Motivo','Fecha y hora'], statusCol:-1, statuses:null, total:'—' },
+});
+Object.assign(SECTIONS, {
+  publicaciones: { title:'Publicaciones', columns:['Publicación','Vendedor','Precio','Fecha','Alertas','Estado'], statusCol:5, statuses:['Todas','Pendiente','Publicada','Requiere cambios','Pausada','Rechazada','Eliminada'], total:'1.126', store:'listing',
+    actions:[{ label:'Aprobar', from:['Pendiente','Requiere cambios'], to:'Publicada', primary:true }, { label:'Solicitar cambios', from:['Pendiente','Publicada'], to:'Requiere cambios', reason:true }, { label:'Pausar', from:['Publicada'], to:'Pausada', reason:true }, { label:'Reactivar', from:['Pausada'], to:'Publicada' }, { label:'Rechazar', from:['Pendiente'], to:'Rechazada', reason:true, danger:true }, { label:'Eliminar', from:['Pausada','Rechazada'], to:'Eliminada', reason:true, danger:true }],
+    rows:[['cronos24','Fiat Cronos 1.3 GSE Drive 2024','Raina Automotores','$ 21.000.000','27 sep','—','Publicada'],['p208','Peugeot 208 Allure 2020','Particular','$ 13.800.000','26 sep','2 denuncias','Publicada'],['hilux21','Toyota Hilux SRV 2021','Concesionaria Andes','$ 28.500.000','25 sep','—','Publicada'],['corsa14','Chevrolet Corsa Classic 1.6 Super 2014','Particular','$ 7.900.000','24 sep','—','Publicada'],['amarok22','VW Amarok V6 Highline 2022','Concesionaria Andes','USD 38.500','27 sep','—','Pendiente'],['amarok22b','VW Amarok V6 Highline 2022','Concesionaria Andes','USD 38.500','27 sep','Posible duplicado de amarok22','Pendiente']] },
+  usuarios: { title:'Usuarios', columns:['Usuario','Email','Tipo','Alta','Estado'], statusCol:4, statuses:['Todos','Activo','Pendiente','Suspendido','Bloqueado'], total:'3.482',
+    actions:[{ label:'Suspender', from:['Activo','Pendiente'], to:'Suspendido', reason:true, danger:true }, { label:'Bloquear', from:['Activo','Suspendido'], to:'Bloqueado', reason:true, danger:true }, { label:'Reactivar', from:['Suspendido','Bloqueado'], to:'Activo', primary:true }],
+    rows:[['u1','Juan Martínez','juan.martinez@mail.com','Particular','mar 2026','Activo'],['u2','Raina Automotores','ventas@raina.com.ar','Agencia','ene 2026','Activo'],['u3','Concesionaria Andes','info@andes.com.ar','Concesionaria oficial','dic 2025','Activo'],['u4','Carla Suárez','carla.s@mail.com','Particular','sep 2026','Pendiente'],['u5','Autos Rápidos 24','contacto@ar24.com','Agencia','ago 2026','Suspendido'],['u6','Usuario #8812','—','Particular','sep 2026','Bloqueado']] },
+  agencias: { title:'Agencias', columns:['Agencia','CUIT','Responsable','Publicaciones','Solicitud','Verificación'], statusCol:5, statuses:['Todas','Pendiente','Verificación en revisión','Verificada','Rechazada','Suspendida'], total:'74', store:'agency',
+    actions:[{ label:'Verificar', from:['Verificación en revisión'], to:'Verificada', primary:true }, { label:'Rechazar', from:['Verificación en revisión'], to:'Rechazada', reason:true, danger:true }, { label:'Suspender', from:['Verificada'], to:'Suspendida', reason:true, danger:true }, { label:'Reactivar', from:['Suspendida'], to:'Verificada' }],
+    rows:[['ag-me','Juan Martínez Automotores','20-30111222-3','Juan Martínez','—','—','Pendiente'],['ag1','Raina Automotores','30-71111111-2','Hernán Raina','14','12/01/2026','Verificada'],['ag2','Concesionaria Andes','30-72222222-3','Laura Méndez','46','03/12/2025','Verificada'],['ag3','Motos Cuyo','30-73333333-4','Diego Ruiz','9','27/09/2026','Verificación en revisión'],['ag4','Usados del Sur','30-74444444-5','Carlos Pérez','22','25/09/2026','Verificación en revisión'],['ag5','Autos Rápidos 24','30-75555555-6','—','0','02/08/2026','Suspendida'],['ag6','Auto Box Maipú','30-76666666-7','Ana Gil','3','—','Pendiente']] },
+  verificaciones: { title:'Verificaciones', columns:['Solicitante','Tipo','Documentación','Fecha','Estado'], statusCol:4, statuses:['Todas','Pendiente','En revisión','Aprobada','Rechazada','Revocada'], total:'23',
+    actions:[{ label:'Tomar', from:['Pendiente'], to:'En revisión' }, { label:'Aprobar', from:['En revisión'], to:'Aprobada', primary:true }, { label:'Rechazar', from:['En revisión'], to:'Rechazada', reason:true, danger:true }, { label:'Revocar', from:['Aprobada'], to:'Revocada', reason:true, danger:true }],
+    rows:[['v1','Carla Suárez','Identidad','DNI frente y dorso','27 sep','Pendiente'],['v2','Gomería Express 24','Negocio','CUIT + habilitación','26 sep','En revisión'],['v4','Juan Martínez','Identidad','DNI frente y dorso','12 mar','Aprobada'],['v5','Autos Rápidos 24','Negocio','CUIT','2 ago','Revocada']] },
+  pagos: { ...SECTIONS.pagos, store:'payment', rows: SECTIONS.pagos.rows.filter(r => r[0] !== 'pg1') },
+  promociones: { ...SECTIONS.promociones, store:'promo' },
+  envios: { title:'Cola de envíos', columns:['Plantilla','Destinatario','Evento','Fecha','Estado'], statusCol:4, statuses:['Todos','Pendiente','Enviado','Fallido'], total:'—', store:'email', rows:[] },
+  ventas: { title:'Ventas y estadísticas' }, publicidad: { title:'Publicidad' }, retencion: { title:'Retención de datos' },
+});
+const NAV_GROUPS = [['Operación',[['dashboard','Resumen'],['usuarios','Usuarios'],['agencias','Agencias'],['publicaciones','Publicaciones'],['catalogo','Catálogo'],['ventas','Ventas']]],['Negocio',[['planes','Planes'],['suscripciones','Suscripciones'],['pagos','Pagos'],['promociones','Promociones'],['publicidad','Publicidad']]],['Confianza',[['verificaciones','Verificaciones'],['productosVerif','Productos de verificación'],['reportes','Reportes'],['mensajes','Mensajes reportados'],['calificaciones','Calificaciones']]],['Comunicación',[['notificaciones','Notificaciones'],['emails','Plantillas de email'],['envios','Cola de envíos']]],['Cumplimiento',[['consentimientos','Consentimientos'],['auditoria','Auditoría'],['retencion','Retención de datos']]],['Otros',[['postulaciones','Postulaciones'],['servicios','Servicios'],['configuracion','Configuración']]]];
+const RETENTION = [['media_sold','Fotos de publicación vendida','Multimedia',7,'días','Venta registrada','Borrado en Cloudinary'],['media_expired','Fotos de publicación vencida o eliminada','Multimedia',30,'días','Vencimiento o baja','Borrado en Cloudinary'],['listing_closed','Publicaciones cerradas','Operativos',12,'meses','Cierre','Se anonimizan'],['sales','Registros de venta','Históricos',5,'años','Fecha de venta','Se agregan en estadísticas'],['plate','Patente del vehículo vendido','Históricos',24,'meses','Fecha de venta','Se borra el dato'],['messages','Mensajes','Operativos',12,'meses','Última actividad','Se borran'],['reports','Denuncias y moderación','Históricos',3,'años','Resolución','Se anonimizan'],['logs','Logs técnicos','Operativos',90,'días','Registro','Se borran'],['audit','Auditoría administrativa','Auditoría',10,'años','Registro','No se modifica ni se borra antes']];
+const CAT_CLASS = { 'Multimedia':'tg tg-warn', 'Operativos':'tg tg-muted', 'Históricos':'tg tg-info', 'Auditoría':'tg tg-ok' };
+const MEDIA_SEED = [{ id:'ms1', title:'Renault Kangoo Express 2015', reason:'Vendida', photos:6, scheduled:'21/08/2026', status:'Eliminada' }, { id:'ms2', title:'Chevrolet Onix LT 1.4 2016', reason:'Vencida', photos:5, scheduled:'20/10/2026', status:'Programada' }];
+const AUDIT_SEED = [['au1','Sofía Ruiz','Verificó agencia','Raina Automotores','Documentación completa','12/01/2026 10:14'],['au2','Martín Sosa','Suspendió usuario','Autos Rápidos 24','Publicaciones con precios falsos reiteradas','02/08/2026 16:40'],['au3','Sofía Ruiz','Aprobó transferencia','Agencia Básica · Auto Box Maipú','Comprobante GIR-004102 acreditado','10/07/2026 12:05']];
+const NAV = NAV_GROUPS.flatMap(g => g[1]);
+const BARS = [['4 ago',62],['11 ago',71],['18 ago',66],['25 ago',84],['1 sep',92],['8 sep',88],['15 sep',104],['22 sep',118]];
+
+class Component extends DCLogic {
+  state = { gs: null, period: 'mes', retention: {}, cf: { agency: '', title: '', link: '', start: '2026-10-01', end: '2026-10-31' }, cfError: null, audit: [], pending: null, pendingReason: '', section: 'dashboard', statusFilter: {}, query: '', overrides: {}, toast: null, cat: [], plans: [], selBrand: 'Chevrolet', selModel: 'Onix', newBrand: '', newModel: '', newVersion: '' };
+  showToast(m) { clearTimeout(this._t); this.setState({ toast: m }); this._t = setTimeout(() => this.setState({ toast: null }), 2000); }
+  gsv() { return this.state.gs || (window.GirandoStore ? window.GirandoStore.get() : null) || { listingStatus: {}, agencyVerif: {}, payments: [], promos: [], emails: [], audit: [], pendingListings: [], campaigns: [], plans: [] }; }
+  rowsFor(key) {
+    const s = SECTIONS[key]; const g = this.gsv();
+    if (key === 'auditoria') return [...(g.audit || []), ...AUDIT_SEED];
+    if (key === 'publicaciones') return [...(g.pendingListings || []).map(p => [p.id, p.title, p.seller, p.price, p.date, '—', 'Pendiente']), ...s.rows];
+    if (key === 'pagos') return [...(g.payments || []).map(p => [p.id, p.agency || p.user, p.concept, p.amount, p.method, p.date, p.status]), ...s.rows];
+    if (key === 'promociones') return [...(g.promos || []).map(p => [p.id, p.product, p.target + ' · ' + p.owner, p.range, p.price, '—', '—', p.status]), ...s.rows];
+    if (key === 'envios') return (g.emails || []).map(e => [e.id, e.template, e.to, e.event, e.date, e.status]);
+    return s.rows || [];
+  }
+  statusOf(key, row) {
+    const g = this.gsv(); const base = row[row.length - 1]; const s = SECTIONS[key] || {};
+    if (s.store === 'listing') return g.listingStatus[row[0]] || base;
+    if (s.store === 'agency') return g.agencyVerif[row[1]] || base;
+    if (s.store === 'payment') { const p = (g.payments || []).find(x => x.id === row[0]); return p ? p.status : (this.state.overrides[key + ':' + row[0]] || base); }
+    if (s.store === 'promo') { const p = (g.promos || []).find(x => x.id === row[0]); return p ? p.status : (this.state.overrides[key + ':' + row[0]] || base); }
+    return this.state.overrides[key + ':' + row[0]] || base;
+  }
+  applyAct(section, row, act, reason) {
+    const S = SECTIONS[section]; const GS = window.GirandoStore; const target = row.vals[0]; const id = row.id;
+    const noteFor = { 'Requiere cambios': 'Moderación pidió cambios: ', 'Rechazada': 'Rechazada por moderación: ', 'Pausada': 'Pausada por moderación: ' };
+    if (GS) GS.update(d => {
+      if (S.store === 'listing') { d.listingStatus[id] = act.to; d.listingNote[id] = noteFor[act.to] ? noteFor[act.to] + (reason || '') : null; if (d.pendingListings.some(p => p.id === id) || id.startsWith('my')) { d.notifs = d.notifs || []; d.notifs.unshift({ id: 'n' + Date.now(), cat: 'Publicaciones', title: 'Tu publicación cambió a: ' + act.to, body: target + (reason ? ' · ' + reason : ''), time: 'Ahora', unread: true, go: 'misPublicaciones' }); GS.queueEmail(d, act.to === 'Publicada' ? 'Publicación aprobada' : 'Publicación ' + act.to.toLowerCase(), 'juan.martinez@mail.com', 'Moderación'); } }
+      else if (S.store === 'agency') { d.agencyVerif[target] = act.to; GS.queueEmail(d, 'Verificación de agencia: ' + act.to, target, 'Moderación de agencias'); if (target === 'Juan Martínez Automotores') { d.notifs = d.notifs || []; d.notifs.unshift({ id: 'n' + Date.now(), cat: 'Cuenta', title: 'Verificación de agencia: ' + act.to, body: reason || 'Revisá el estado en Mi Girando.', time: 'Ahora', unread: true, go: 'verificacion' }); } }
+      else if (S.store === 'payment') { const p = d.payments.find(x => x.id === id); if (p) { p.status = act.to; if (act.to === 'Aprobado' && d.subscription) { if (d.subscription.status === 'Pendiente') d.subscription.status = 'Activa'; if (d.subscription.pendingPlanId) { d.subscription.planId = d.subscription.pendingPlanId; delete d.subscription.pendingPlanId; } GS.queueEmail(d, 'Suscripción activada', 'juan.martinez@mail.com', 'Transferencia aprobada'); d.notifs = d.notifs || []; d.notifs.unshift({ id: 'n' + Date.now(), cat: 'Suscripción', title: 'Aprobamos tu transferencia', body: p.concept + ' · ' + p.amount, time: 'Ahora', unread: true, go: 'suscripcion' }); } } }
+      else if (S.store === 'promo') { const p = d.promos.find(x => x.id === id); if (p) p.status = act.to; }
+      GS.audit(d, 'Sofía Ruiz', act.label + ' · ' + S.title, target, reason);
+    });
+    const local = !S.store || (S.store === 'payment' && !(this.gsv().payments || []).some(x => x.id === id)) || (S.store === 'promo' && !(this.gsv().promos || []).some(x => x.id === id));
+    this.setState(s => ({ pending: null, pendingReason: '', overrides: local ? { ...s.overrides, [section + ':' + id]: act.to } : s.overrides }));
+    this.showToast(act.label + ': ' + target);
+  }
+  applyActOld(section, row, act, reason) {
+    const now = new Date(); const ts = now.toLocaleDateString('es-AR') + ' ' + now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+    this.setState(s => ({ pending: null, pendingReason: '', overrides: { ...s.overrides, [section + ':' + row.id]: act.to }, audit: [['au' + Date.now(), 'Sofía Ruiz', act.label + ' · ' + SECTIONS[section].title, row.vals[0], reason || '—', ts], ...s.audit] }));
+    this.showToast(act.label + ': ' + row.vals[0]);
+  }
+  pendingCount(key) { return this.rowsFor(key).filter(r => ['Pendiente','Verificación en revisión','Pendiente de verificación'].includes(this.statusOf(key, r))).length; }
+  componentDidMount() { const hook = () => { if (!window.GirandoStore) return false; const g = window.GirandoStore.get(); this.setState({ gs: g, plans: JSON.parse(JSON.stringify(g.plans || [])), retention: g.retention || {} }); this._u = window.GirandoStore.subscribe(n => this.setState({ gs: n })); return true; }; if (!hook()) this._sp = setInterval(() => { if (hook()) clearInterval(this._sp); }, 60); const init = () => { if (!window.GIRANDO_CATALOG) return false; this.setState({ cat: JSON.parse(JSON.stringify(window.GIRANDO_CATALOG)), plans: JSON.parse(JSON.stringify(window.GIRANDO_PLANS || [])) }); return true; }; if (!init()) this._p = setInterval(() => { if (init()) clearInterval(this._p); }, 60); }
+  componentWillUnmount() { clearInterval(this._p); clearInterval(this._sp); if (this._u) this._u(); }
+  pubCount(name) { let h = 0; for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) % 97; return h % 5 === 0 ? 0 : 3 + (h % 40); }
+  mutCat(fn) { this.setState(s => { const cat = JSON.parse(JSON.stringify(s.cat)); fn(cat); return { cat }; }); }
+  catalogVals(q) {
+    const { cat, selBrand, selModel, newBrand, newModel, newVersion } = this.state;
+    const st = (a) => ({ statusText: a ? 'Activa' : 'Inactiva', statusClass: a ? B.ok : B.muted, toggleLabel: a ? 'Desactivar' : 'Activar', nameStyle: a ? '' : 'color:#9aa0ab;' });
+    const brand = cat.find(b => b.brand === selBrand) || cat[0];
+    const model = brand && (brand.models.find(m => m.name === selModel) || brand.models[0]);
+    const stop = (fn) => (e) => { e.stopPropagation(); fn(); };
+    return {
+      selBrand: brand ? brand.brand : '—', selModel: model ? model.name : '—', newBrand, newModel, newVersion,
+      onNewBrand: (e) => this.setState({ newBrand: e.target.value }), onNewModel: (e) => this.setState({ newModel: e.target.value }), onNewVersion: (e) => this.setState({ newVersion: e.target.value }),
+      addBrand: () => { const n = newBrand.trim(); if (!n) return; this.mutCat(c => c.push({ brand: n, active: true, models: [] })); this.setState({ newBrand: '', selBrand: n }); this.showToast('Marca agregada: ' + n); },
+      addModel: () => { const n = newModel.trim(); if (!n || !brand) return; this.mutCat(c => c.find(b => b.brand === brand.brand).models.push({ name: n, body: 'Sedán', type: 'Auto', active: true, gens: [{ name: 'Primera generación', years: [2026, 2026], active: true, versions: [] }] })); this.setState({ newModel: '', selModel: n }); this.showToast('Modelo agregado: ' + n); },
+      addVersion: () => { const n = newVersion.trim(); if (!n || !model) return; this.mutCat(c => { const m = c.find(b => b.brand === brand.brand).models.find(x => x.name === model.name); m.gens[0].versions.push({ name: n, engine: '—', fuel: 'Nafta', trans: 'Manual', traction: 'Delantera', doors: 4, active: true }); }); this.setState({ newVersion: '' }); this.showToast('Versión agregada: ' + n); },
+      catBrands: cat.filter(b => !q || b.brand.toLowerCase().includes(q) || b.models.some(m => m.name.toLowerCase().includes(q))).map(b => ({ name: b.brand, meta: b.models.length + ' modelos · ' + this.pubCount(b.brand) + ' publicaciones', ...st(b.active), rowStyle: brand && b.brand === brand.brand ? 'background:#e9eefe;' : '',
+        onSelect: () => this.setState({ selBrand: b.brand, selModel: (b.models[0] || {}).name }), onToggle: stop(() => this.mutCat(c => { const x = c.find(y => y.brand === b.brand); x.active = !x.active; })) })),
+      catModels: (brand ? brand.models : []).map(m => ({ name: m.name, meta: m.type + ' · ' + m.body + ' · ' + this.pubCount(m.name) + ' publicaciones', ...st(m.active), rowStyle: model && m.name === model.name ? 'background:#e9eefe;' : '',
+        onSelect: () => this.setState({ selModel: m.name }), onToggle: stop(() => this.mutCat(c => { const x = c.find(y => y.brand === brand.brand).models.find(y => y.name === m.name); x.active = !x.active; })) })),
+      catGens: (model ? model.gens : []).map((g, gi) => ({ name: g.name, years: g.years[0] + '–' + g.years[1], toggleLabel: g.active ? 'Desactivar' : 'Activar',
+        onToggle: () => this.mutCat(c => { const x = c.find(y => y.brand === brand.brand).models.find(y => y.name === model.name).gens[gi]; x.active = !x.active; }),
+        versions: g.versions.map((v, vi) => ({ name: v.name, meta: 'Motor ' + v.engine + ' · ' + v.trans + ' · ' + v.traction, ...st(v.active && g.active),
+          onToggle: () => this.mutCat(c => { const x = c.find(y => y.brand === brand.brand).models.find(y => y.name === model.name).gens[gi].versions[vi]; x.active = !x.active; }) })) })),
+    };
+  }
+  dashKpis() {
+    const f = { dia: 1 / 30, semana: 0.25, mes: 1, trimestre: 3, año: 12 }[this.state.period] || 1; const n = (v) => Math.round(v * f).toLocaleString('es-AR'); const g = this.gsv();
+    const subsActive = 186 + (g.subscription && g.subscription.status === 'Activa' ? 1 : 0);
+    const promosActive = 9 + (g.promos || []).filter(p => p.status === 'Activa').length;
+    return [
+      ['Usuarios', '3.482', 'Total registrados', 'usuarios'], ['Agencias', '74', Object.values(g.agencyVerif || {}).filter(s => s === 'Verificada').length + ' verificadas en la muestra', 'agencias'],
+      ['Publicaciones activas', '1.126', 'Hoy', 'publicaciones'], ['Publicaciones vendidas', n(96), 'En el período', 'ventas'],
+      ['Ventas atribuidas a Girando', n(61), 'Reportadas por el vendedor', 'ventas'], ['Suscripciones activas', String(subsActive), 'Hoy', 'suscripciones'],
+      ['Ingresos', '$ ' + n(9800000).replace(/\./g, '.'), 'Pagos aprobados en el período', 'pagos'], ['Promociones activas', String(promosActive), 'Hoy', 'promociones'],
+      ['Reportes pendientes', String(this.pendingCount('reportes')), 'Para revisar', 'reportes'], ['Verificaciones pendientes', String(this.pendingCount('agencias') + this.pendingCount('verificaciones')), 'Agencias e identidad', 'agencias'],
+    ].map(([label, value, delta, sec]) => ({ label, value, delta, deltaStyle: 'color:#5c6370;', onClick: () => this.setState({ section: sec }) }));
+  }
+  adminExtra(section) {
+    const g = this.gsv(); const GS = window.GirandoStore; const S = this.state;
+    const f = { dia: 1 / 30, semana: 0.25, mes: 1, trimestre: 3, año: 12 }[S.period] || 1;
+    const models = [['Chevrolet Corsa', 120, 38, 8100000, 7700000, 23], ['Chevrolet Onix', 96, 21, 16200000, 15700000, 31], ['Volkswagen Gol Trend', 88, 19, 10100000, 9700000, 26], ['Fiat Cronos', 74, 14, 17600000, 17000000, 34], ['Toyota Hilux', 51, 9, 31500000, 30200000, 41], ['Peugeot 208', 40, 2, 14500000, 14100000, 19]];
+    const brands = [['Chevrolet', 402], ['Volkswagen', 318], ['Fiat', 244], ['Toyota', 190], ['Ford', 176], ['Peugeot', 142]];
+    const money = (v) => '$ ' + Math.round(v).toLocaleString('es-AR');
+    const ret = { ...Object.fromEntries(RETENTION.map(r => [r[0], r[3]])), ...(S.retention || {}) };
+    const mq = [...((g.mediaQueue) || []), ...MEDIA_SEED];
+    const cfSet = (k) => (e) => this.setState(s => ({ cf: { ...s.cf, [k]: e.target.value }, cfError: null }));
+    return {
+      dataLabel: 'Datos de ejemplo', showPeriod: ['dashboard', 'ventas'].includes(section),
+      periodChips: [['dia', 'Día'], ['semana', 'Semana'], ['mes', 'Mes'], ['trimestre', 'Trimestre'], ['año', 'Año']].map(([k, l]) => ({ label: l, selected: S.period === k, onClick: () => this.setState({ period: k }), style: S.period === k ? 'border:1px solid #14171f;background:#14171f;color:#fff;' : 'border:1px solid #dde1e8;background:#fff;color:#14171f;' })),
+      isVentasAdm: section === 'ventas', isPublicidad: section === 'publicidad', isRetencion: section === 'retencion',
+      salesKpisAdm: [['Publicaciones creadas', Math.round(412 * f), 'En el período'], ['Publicaciones activas', '1.126', 'Hoy'], ['Publicaciones vendidas', Math.round(96 * f), 'Cerradas como vendidas'], ['Ventas reportadas', Math.round(96 * f), 'Con datos de venta'], ['Atribuidas a Girando', Math.round(61 * f), 'Canal: Girando o cliente de Girando'], ['Volumen reportado', money(1180000000 * f), 'Suma de precios finales'], ['Precio promedio', money(12300000), 'Ventas del período'], ['Conversión', '4,1 %', 'Ventas atribuidas / publicaciones activas']].map(([label, value, hint]) => ({ label, value: String(value), hint })),
+      modelStats: models.map(([name, pub, sold, ap, as, days]) => { const s = Math.round(sold * f); const ok = s >= 3; return { name, pub: Math.round(pub * f), sold: s, avgPub: ok ? money(ap) : 'Datos insuficientes', avgSold: ok ? money(as) : '—', days: ok ? days + ' días' : '—', avgStyle: ok ? '' : 'color:#9aa0ab;' }; }),
+      brandStats: brands.map(([name, v]) => ({ name, value: Math.round(v * f), bar: 'width:' + Math.round(v / brands[0][1] * 100) + '%;' })),
+      campaignsView: (g.campaigns || []).map((c, i) => ({ ...c, range: (c.start || '—') + ' → ' + (c.end || '—'), statusClass: c.status === 'Activa' ? 'tg tg-ok' : (c.status === 'Pausada' ? 'tg tg-warn' : 'tg tg-muted'), imgStyle: c.image ? 'background-image:url(' + c.image + ');' : '', noImgLabel: c.image ? '' : 'Sin imagen',
+        toggleLabel: c.status === 'Activa' ? 'Pausar' : 'Activar',
+        onToggle: () => { if (c.status !== 'Activa' && !c.image && !c.demo) { this.showToast('Subí una imagen antes de activar'); return; } GS && GS.update(d => { d.campaigns[i].status = c.status === 'Activa' ? 'Pausada' : 'Activa'; GS.audit(d, 'Sofía Ruiz', (c.status === 'Activa' ? 'Pausó' : 'Activó') + ' campaña', c.title, '—'); }); },
+        onImage: (e) => { const file = e.target.files && e.target.files[0]; if (!file) return; if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) { this.showToast('Formato no válido'); return; } if (file.size > 5 * 1024 * 1024) { this.showToast('La imagen supera 5 MB'); return; } const img = new Image(); img.onload = () => { const w = Math.min(1200, img.width); const hh = Math.round(img.height * w / img.width); const cv = document.createElement('canvas'); cv.width = w; cv.height = hh; cv.getContext('2d').drawImage(img, 0, 0, w, hh); const url = cv.toDataURL('image/jpeg', 0.8); GS && GS.update(d => { d.campaigns[i].image = url; GS.audit(d, 'Sofía Ruiz', 'Subió imagen de campaña', c.title, '—'); }); this.showToast('Imagen cargada'); }; img.src = URL.createObjectURL(file); } })),
+      cf: S.cf, cfError: S.cfError, cfOn: { agency: cfSet('agency'), title: cfSet('title'), link: cfSet('link'), start: cfSet('start'), end: cfSet('end') },
+      createCampaign: () => { const c = S.cf; if (!c.agency.trim() || !c.title.trim()) return this.setState({ cfError: 'Completá anunciante y título.' }); if (c.link && !/^https:\/\/\S+$/.test(c.link)) return this.setState({ cfError: 'El enlace tiene que empezar con https://' }); if (c.end < c.start) return this.setState({ cfError: 'La fecha de fin es anterior al inicio.' }); GS && GS.update(d => { d.campaigns.unshift({ id: 'cp' + Date.now(), agency: c.agency, title: c.title, subtitle: c.agency, link: c.link, start: c.start, end: c.end, status: 'Borrador', image: null }); GS.audit(d, 'Sofía Ruiz', 'Creó campaña', c.title, '—'); }); this.setState({ cf: { agency: '', title: '', link: '', start: '2026-10-01', end: '2026-10-31' } }); this.showToast('Campaña creada como borrador'); },
+      retentionRows: RETENTION.map(([k, label, cat, , unit, from, then]) => ({ label, cat, catClass: CAT_CLASS[cat], value: String(ret[k]), unit, from, then, onValue: (e) => { const v = e.target.value.replace(/\D/g, ''); this.setState(s => ({ retention: { ...s.retention, [k]: v } })); } })),
+      saveRetention: () => { const r = { ...ret }; GS && GS.update(d => { d.retention = r; GS.audit(d, 'Sofía Ruiz', 'Actualizó política de retención', Object.entries(r).map(([k, v]) => k + '=' + v).join(', '), 'Configuración'); }); this.showToast('Política guardada'); },
+      mediaQueue: mq.map(m => ({ ...m, statusClass: m.status === 'Eliminada' ? 'tg tg-muted' : 'tg tg-warn', canDelete: m.status === 'Programada' && !String(m.id).startsWith('ms'),
+        onDelete: () => GS && GS.update(d => { const x = (d.mediaQueue || []).find(y => y.id === m.id); if (x) x.status = 'Eliminada'; GS.audit(d, 'Sofía Ruiz', 'Eliminó imágenes (simulado)', m.title, 'Política de retención'); }) })),
+      resetDemo: () => { if (GS) GS.reset(); this.setState({ overrides: {} }); this.showToast('Restablecimos los datos de ejemplo'); },
+    };
+  }
+  renderVals() {
+    const { section, statusFilter, query, toast } = this.state;
+    const sec = SECTIONS[section];
+    const filt = statusFilter[section] || (sec.statuses ? sec.statuses[0] : null);
+    const q = query.trim().toLowerCase();
+    const secRows = this.rowsFor(section);
+    const rows = secRows.map(r => ({ id: r[0], vals: section === 'auditoria' ? r.slice(1) : [...r.slice(1, -1), this.statusOf(section, r)] }))
+      .filter(r => !sec.statuses || filt === sec.statuses[0] || r.vals[sec.statusCol] === filt)
+      .filter(r => !q || r.vals.join(' ').toLowerCase().includes(q));
+    const maxBar = Math.max(...BARS.map(b => b[1]));
+    return {
+      toast, query,
+      stop: (e) => e.stopPropagation(),
+      pendingOpen: !!this.state.pending, pendingTitle: this.state.pending ? this.state.pending.act.label + ': ' + this.state.pending.row.vals[0] : '',
+      pendingReason: this.state.pendingReason, pendingNoReason: !this.state.pendingReason.trim(),
+      onPendingReason: (e) => this.setState({ pendingReason: e.target.value }),
+      cancelPending: () => this.setState({ pending: null }),
+      confirmPending: () => { const p = this.state.pending; if (p && this.state.pendingReason.trim()) this.applyAct(p.section, p.row, p.act, this.state.pendingReason.trim()); },
+      onQuery: (e) => this.setState({ query: e.target.value }),
+      sectionTitle: sec.title,
+      isDashboard: section === 'dashboard',
+      isConfig: section === 'configuracion',
+      hasTable: !['configuracion','catalogo','planes','ventas','publicidad','retencion'].includes(section),
+      ...this.adminExtra(section),
+      isSubs: section === 'suscripciones', isCatalogo: section === 'catalogo', isPlanesAdm: section === 'planes',
+      subKpis: [{ label:'Suscripciones activas', value:'186', style:'' }, { label:'Nuevas este mes', value:'14', style:'color:#1a6b40;' }, { label:'Ingresos del mes', value:'$ 9,8 M', style:'' }, { label:'Cancelaciones', value:'5', style:'' }, { label:'Pagos pendientes', value: String(this.pendingCount('pagos')), style:'color:#8c560a;' }, { label:'Pagos rechazados', value:'3', style:'color:#a32020;' }],
+      ...this.catalogVals(q),
+      planRows: this.state.plans.map((p, i) => { const upd = (f, num) => (e) => { const v = num ? e.target.value.replace(/\D/g, '') : e.target.value; this.setState(s => { const plans = s.plans.slice(); plans[i] = { ...plans[i], [f]: num ? Number(v || 0) : v }; return { plans }; }); };
+        return { ...p, audienceLabel: p.audience === 'agencia' ? 'Agencias' : 'Particulares', onName: upd('name'), onPrice: upd('price', true), onLimit: upd('limit', true), onPeriod: upd('period'), statusText: p.active ? 'Activo' : 'Inactivo', statusClass: p.active ? B.ok : B.muted,
+          onToggle: () => this.setState(s => { const plans = s.plans.slice(); plans[i] = { ...plans[i], active: !plans[i].active }; return { plans }; }) }; }),
+      savePlans: () => { const plans = JSON.parse(JSON.stringify(this.state.plans)); if (window.GirandoStore) window.GirandoStore.update(d => { d.plans = plans; window.GirandoStore.audit(d, 'Sofía Ruiz', 'Actualizó planes', plans.map(p => p.name + ' (' + p.limit + ')').join(', '), 'Configuración comercial'); }); this.showToast('Planes guardados. La app ya usa los nuevos límites.'); },
+      navItems: NAV_GROUPS.flatMap(([gl, items]) => [{ isHeader: true, isItem: false, label: gl }, ...items.map(([k, l]) => { const n = ['reportes','verificaciones','pagos','agencias','mensajes','publicaciones'].includes(k) ? this.pendingCount(k) : 0; return { isHeader: false, isItem: true, label: l, count: n > 0 ? String(n) : null, current: k === section ? 'page' : 'false',
+        style: k === section ? 'background:#e9eefe;color:#0d3399;font-weight:700;' : 'background:transparent;color:#14171f;font-weight:500;',
+        onClick: () => this.setState({ section: k, query: '' }) }; })]),
+      kpis: this.dashKpis(),
+      bars: BARS.map((b, i) => ({ label: b[0], value: b[1], style: 'height:' + Math.round(b[1] / maxBar * 130) + 'px;background:' + (i === BARS.length - 1 ? '#1652f0' : '#c9d6fb') + ';' })),
+      attention: [
+        { title:'3 publicaciones esperan moderación', meta:'La más antigua hace 26 h', cta:'Revisar', onClick: () => this.setState(s => ({ section:'publicaciones', statusFilter: { ...s.statusFilter, publicaciones:'Moderación' } })) },
+        { title:'Peugeot 208 Allure tiene 2 denuncias', meta:'Publicación sospechosa', cta:'Ver reporte', onClick: () => this.setState({ section:'reportes' }) },
+        { title:'Concesionaria Andes pidió sello oficial', meta:'Contrato de marca adjunto', cta:'Verificar', onClick: () => this.setState({ section:'verificaciones' }) },
+        { title:'Calificación denunciada', meta:'Autos Rápidos 24 · 1 estrella', cta:'Revisar', onClick: () => this.setState({ section:'calificaciones' }) },
+      ],
+      statusChips: (sec.statuses || []).map(s => ({ label: s, selected: s === filt, style: s === filt ? 'border:1px solid #14171f;background:#14171f;color:#fff;' : 'border:1px solid #dde1e8;background:#fff;color:#14171f;',
+        onClick: () => this.setState(st => ({ statusFilter: { ...st.statusFilter, [section]: s } })) })),
+      columns: sec.columns || [],
+      rows: rows.map(r => { const status = r.vals[sec.statusCol]; const acts = (sec.actions || (sec.action ? [{ ...sec.action, primary: true }] : [])).filter(a => a.from.includes(status));
+        return { acts: acts.map(a => ({ label: a.label, style: a.primary ? 'border:0;background:#1652f0;color:#fff;' : (a.danger ? 'border:1px solid #f1c4c4;background:#fff;color:#a32020;' : 'border:1px solid #dde1e8;background:#fff;color:#14171f;'), onClick: () => { if (a.reason) this.setState({ pending: { section, row: r, act: a }, pendingReason: '' }); else this.applyAct(section, r, a); } })),
+          cells: r.vals.map((v, i) => { const isStatus = i === sec.statusCol; const alert = sec.columns[i] === 'Alertas' && v !== '—'; return { text: v, badge: isStatus ? (STATUS_BADGE[v] || B.muted) : (alert ? B.warn : null), plain: !isStatus && !alert, style: i === 0 ? 'font-weight:600;' : 'color:#454b56;' }; }),
+          onSecondary: () => this.showToast('Abriendo ' + r.vals[0]) }; }),
+      noRows: rows.length === 0,
+      resultLabel: rows.length + ' resultados',
+      pageLabel: 'Mostrando 1–' + rows.length + ' de ' + (sec.total || rows.length),
+    };
+  }
+}
+</script>
+</body>
+</html>

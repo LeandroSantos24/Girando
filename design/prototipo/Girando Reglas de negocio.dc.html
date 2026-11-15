@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body{margin:0;background:#fff;font-family:'Sora',sans-serif;color:#14171f;}
+    a{color:#0d3399;} a:hover{color:#1652f0;}
+  </style>
+</helmet>
+<div style="max-width:880px;margin:0 auto;padding:56px 28px 96px;">
+  <img src="assets/logo-full.png" alt="Girando" style="height:34px;width:auto;display:block;margin-bottom:28px;">
+  <h1 style="font-size:32px;letter-spacing:-0.02em;margin:0 0 10px;">Reglas de negocio y arquitectura</h1>
+  <p style="font-size:15px;line-height:1.6;color:#5c6370;margin:0 0 40px;max-width:640px;text-wrap:pretty;">Esto es lo que valida el backend. La interfaz muestra estos estados, pero no los decide.</p>
+
+  <h2 style="font-size:20px;margin:0 0 12px;">1. Cuentas</h2>
+  <pre style="background:#f6f7f9;border-radius:12px;padding:18px;font-size:13px;line-height:1.7;overflow:auto;margin:0 0 14px;font-family:ui-monospace,Menlo,monospace;">Usuario ──┬── Cuenta particular ── Publicaciones
+          └── Miembro de Organización (rol: admin | vendedor)
+                 └── Agencia ── Suscripción ── Plan
+                        └── Publicaciones</pre>
+  <ul style="font-size:14px;line-height:1.75;margin:0 0 36px;padding-left:20px;">
+    <li>Las publicaciones de una agencia pertenecen a la organización, no al usuario que las cargó.</li>
+    <li>Cualquiera puede navegar sin cuenta. Favoritos, contacto, publicar, postularse y calificar requieren sesión.</li>
+    <li>La verificación (sin verificar / pendiente / verificado) se guarda por separado para usuario, agencia, identidad y publicación.</li>
+  </ul>
+
+  <h2 style="font-size:20px;margin:0 0 12px;">2. Límite de publicaciones</h2>
+  <ul style="font-size:14px;line-height:1.75;margin:0 0 36px;padding-left:20px;">
+    <li>Cuentan para el límite: <strong>Publicada</strong> y <strong>Pendiente de revisión</strong>. Pausada, Borrador, Vendida, Expirada, Rechazada y Eliminada no cuentan.</li>
+    <li>El límite se calcula como <code>plan_efectivo.limite</code>. El plan efectivo es el de la suscripción si su estado otorga permisos; si no, es Particular (1).</li>
+    <li>Crear, reactivar o renovar una publicación valida el límite en el servidor. Si se supera, responde <code>409 LIMITE_ALCANZADO</code> y la app muestra “Ya tenés una publicación activa”.</li>
+    <li>Precio, límite, duración y estado de cada plan salen de la tabla <code>planes</code>, que edita el administrador.</li>
+  </ul>
+
+  <h2 style="font-size:20px;margin:0 0 12px;">3. Estados de suscripción</h2>
+  <table style="width:100%;border-collapse:collapse;font-size:13.5px;margin-bottom:36px;">
+    <thead><tr style="text-align:left;color:#5c6370;font-size:12px;text-transform:uppercase;letter-spacing:.04em;"><th scope="col" style="padding:10px 12px;border-bottom:2px solid #14171f;">Estado</th><th scope="col" style="padding:10px 12px;border-bottom:2px solid #14171f;">¿Otorga el plan?</th><th scope="col" style="padding:10px 12px;border-bottom:2px solid #14171f;">Qué lo dispara</th></tr></thead>
+    <tbody>
+      <sc-for list="{{ subStates }}" as="s" hint-placeholder-count="6">
+      <tr><td style="padding:10px 12px;border-bottom:1px solid #eef1f5;font-weight:700;">{{ s.name }}</td><td style="padding:10px 12px;border-bottom:1px solid #eef1f5;">{{ s.grants }}</td><td style="padding:10px 12px;border-bottom:1px solid #eef1f5;color:#454b56;">{{ s.trigger }}</td></tr>
+      </sc-for>
+    </tbody>
+  </table>
+  <p style="font-size:14px;line-height:1.7;margin:-20px 0 36px;">Cuando una agencia pierde el plan (Expirada), sus publicaciones no se borran. Las más antiguas que superen el límite Particular pasan a <strong>Pausada</strong> y se pueden reactivar si vuelve a suscribirse.</p>
+
+  <h2 style="font-size:20px;margin:0 0 12px;">4. Pagos</h2>
+  <pre style="background:#f6f7f9;border-radius:12px;padding:18px;font-size:13px;line-height:1.7;overflow:auto;margin:0 0 14px;font-family:ui-monospace,Menlo,monospace;">App ─► Backend: crear suscripción (preapproval)
+Backend ─► Mercado Pago: POST /preapproval ─► init_point
+App ─► Mercado Pago (checkout) ─► vuelve a la app: "Confirmando tu pago"
+Mercado Pago ─► Webhook ─► Backend consulta el estado real ─► actualiza suscripción
+App consulta al backend ─► muestra Activa / Pendiente / Rechazada</pre>
+  <ul style="font-size:14px;line-height:1.75;margin:0 0 36px;padding-left:20px;">
+    <li>La URL de retorno de Mercado Pago no activa nada. Solo el webhook, validado contra la API, cambia el estado.</li>
+    <li>Transferencia: el aviso del usuario crea un pago en estado <strong>Pendiente de verificación</strong>. Solo el administrador lo aprueba (Admin → Pagos).</li>
+    <li>Cobros recurrentes rechazados: se pasa a Pago rechazado, luego se reintenta, luego período de gracia y finalmente Expirada.</li>
+  </ul>
+
+  <h2 style="font-size:20px;margin:0 0 12px;">5. Estados de publicación</h2>
+  <table style="width:100%;border-collapse:collapse;font-size:13.5px;margin-bottom:36px;">
+    <thead><tr style="text-align:left;color:#5c6370;font-size:12px;text-transform:uppercase;letter-spacing:.04em;"><th scope="col" style="padding:10px 12px;border-bottom:2px solid #14171f;">Estado</th><th scope="col" style="padding:10px 12px;border-bottom:2px solid #14171f;">Visible</th><th scope="col" style="padding:10px 12px;border-bottom:2px solid #14171f;">Puede pasar a</th></tr></thead>
+    <tbody>
+      <sc-for list="{{ pubStates }}" as="s" hint-placeholder-count="8">
+      <tr><td style="padding:10px 12px;border-bottom:1px solid #eef1f5;font-weight:700;">{{ s.name }}</td><td style="padding:10px 12px;border-bottom:1px solid #eef1f5;">{{ s.visible }}</td><td style="padding:10px 12px;border-bottom:1px solid #eef1f5;color:#454b56;">{{ s.next }}</td></tr>
+      </sc-for>
+    </tbody>
+  </table>
+  <p style="font-size:14px;line-height:1.7;margin:-20px 0 36px;"><strong>Vendida</strong> y <strong>Eliminada</strong> son estados distintos y ninguno borra el registro. El historial queda para estadísticas y reputación. Las publicaciones duran 60 días y el sistema avisa 3 días antes de que venzan.</p>
+
+  <h2 style="font-size:20px;margin:0 0 12px;">6. Catálogo y búsqueda</h2>
+  <ul style="font-size:14px;line-height:1.75;margin:0;padding-left:20px;">
+    <li>Marca → Modelo → Generación → Versión (motor, combustible, transmisión, tracción y puertas por defecto). Cada nivel tiene un estado activo/inactivo. No se borra nada que tenga publicaciones asociadas.</li>
+    <li>La publicación guarda los IDs del catálogo más los datos estructurados (año, km, precio, ubicación). El título y la descripción son texto libre y no alimentan los filtros.</li>
+    <li>Los filtros son facetas sobre datos estructurados: las opciones disponibles salen de los resultados que cumplen la selección actual, así nunca aparece una combinación imposible.</li>
+    <li>El texto de búsqueda se interpreta primero contra el catálogo (“corsa 2014” → modelo Corsa, año 2014). Lo que no coincide se busca en el título y la descripción.</li>
+  </ul>
+
+  <h2 style="font-size:20px;margin:36px 0 12px;">7. Separación de entidades</h2>
+  <table style="width:100%;border-collapse:collapse;font-size:13.5px;">
+    <tbody>
+      <tr><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;font-weight:700;width:160px;">Vehículo</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;color:#454b56;">Datos estructurados del catálogo: marca, modelo, versión, año, km</td></tr><tr><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;font-weight:700;width:160px;">Publicación</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;color:#454b56;">Contenido libre: título, descripción, fotos, video; además precio, ubicación y estado</td></tr><tr><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;font-weight:700;width:160px;">Cuenta</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;color:#454b56;">Usuario u organización (agencia)</td></tr><tr><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;font-weight:700;width:160px;">Plan</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;color:#454b56;">Permisos: límites y funciones</td></tr><tr><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;font-weight:700;width:160px;">Suscripción</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;color:#454b56;">Estado financiero del plan</td></tr><tr><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;font-weight:700;width:160px;">Promoción</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;color:#454b56;">Exposición pagada, siempre identificada</td></tr><tr><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;font-weight:700;width:160px;">Verificación</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;color:#454b56;">Confianza: identidad, agencia y, a futuro, productos pagos</td></tr><tr><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;font-weight:700;width:160px;">Interacción</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;color:#454b56;">Mensajes, favoritos, postulaciones y calificaciones</td></tr>
+    </tbody>
+  </table>
+
+  <h2 style="font-size:20px;margin:36px 0 12px;">8. Fotos y calidad de la publicación</h2>
+  <ul style="font-size:14px;line-height:1.75;margin:0;padding-left:20px;"><li>Hasta 6 fotos por publicación. El servidor rechaza la séptima y cualquier archivo que no sea JPG, PNG o WEBP o que supere 10 MB.</li><li>Hay posiciones sugeridas (frente, trasera, laterales, interior, adicional), pero ninguna es obligatoria. La portada es la primera foto salvo que el vendedor elija otra.</li><li>Obligatorios para publicar: versión del catálogo, año, km, precio, ubicación y título. Las fotos y la descripción son recomendadas y suman al porcentaje de completitud.</li><li>Girando no genera texto en nombre del vendedor. Las sugerencias solo agregan títulos de sección vacíos.</li></ul>
+
+  <h2 style="font-size:20px;margin:36px 0 12px;">9. Verificación y confianza</h2>
+  <ul style="font-size:14px;line-height:1.75;margin:0;padding-left:20px;"><li>Estados de agencia: No verificada, Pendiente, Verificada, Rechazada, Suspendida. Cada cambio lo hace un administrador y queda en Auditoría.</li><li>“Agencia verificada” certifica los datos de la empresa, no el estado de los vehículos. La interfaz lo aclara.</li><li>Los productos de verificación (nombre, descripción, tipo, precio, estado) son configurables. Por ahora solo están activos Identidad y Agencia verificada.</li><li>Señales de confianza que se muestran: verificación, operaciones concretadas, calificación con su cantidad, antigüedad y publicaciones activas. No hay un puntaje combinado hasta definir cómo se calcula.</li><li>Una calificación requiere una interacción válida (una consulta respondida u operación concretada) y se puede hacer una sola vez por interacción.</li></ul>
+
+  <h2 style="font-size:20px;margin:36px 0 12px;">10. Promociones y resultados</h2>
+  <ul style="font-size:14px;line-height:1.75;margin:0;padding-left:20px;"><li>Una promoción es una entidad propia: objetivo (publicación o agencia), tipo, inicio, fin, precio, estado (Pendiente, Activa, Pausada, Finalizada, Cancelada), prioridad y métricas (impresiones, clics, favoritos, consultas).</li><li>Los resultados patrocinados se muestran en un bloque aparte con la etiqueta “Patrocinado”. Nunca se mezclan en la lista orgánica.</li><li>“Más relevantes” hoy ordena por coincidencia con la búsqueda y los filtros, y luego por fecha. Más adelante puede sumar completitud, interacción y distancia, pero el pago nunca altera el orden orgánico.</li><li>Las métricas miden exposición e interacción. No se promete ninguna venta.</li></ul>
+
+  <h2 style="font-size:20px;margin:36px 0 12px;">11. Mensajes, reportes y moderación</h2>
+  <ul style="font-size:14px;line-height:1.75;margin:0;padding-left:20px;"><li>Cada conversación está atada a una publicación (conversación → publicación → vehículo). El teléfono del vendedor no se muestra salvo que él lo active.</li><li>Límites anti-abuso: hasta 10 conversaciones nuevas por usuario por día y no se puede repetir el mismo mensaje seguido. Se puede bloquear al otro usuario o reportar la conversación.</li><li>Motivos para reportar una publicación: precio falso, vehículo inexistente, información engañosa, duplicada, contenido inapropiado, posible estafa, ya vendido u otro, con una descripción opcional.</li><li>Acciones de moderación: aprobar, solicitar cambios, pausar, rechazar, eliminar y suspender usuario. Las que afectan a terceros piden un motivo y generan un registro de auditoría (quién, qué, sobre qué, motivo, fecha y hora).</li><li>Posibles duplicados (misma versión, año, precio y vendedor o fotos repetidas) se marcan para revisión. No se bloquean automáticamente.</li></ul>
+
+  <h2 style="font-size:20px;margin:36px 0 12px;">12. Notificaciones, emails y consentimientos</h2>
+  <ul style="font-size:14px;line-height:1.75;margin:0;padding-left:20px;"><li>Hay dos tipos de comunicación. Las operativas (seguridad, pagos, moderación, mensajes) son necesarias para usar la cuenta. Las comerciales requieren consentimiento explícito.</li><li>Cada evento define sus canales (app, email) y cada plantilla de email su disparador. Ambos se administran desde el panel.</li><li>Cookies en cuatro categorías: necesarias, preferencias, analítica y marketing. Solo las necesarias están activas antes de que el usuario elija.</li><li>Cada consentimiento se guarda con tipo, versión del documento, fecha, canal y estado (otorgado o revocado), no como un simple sí o no.</li><li>Seguridad: contraseñas con hash, verificación de email, bloqueo tras intentos fallidos, lista de sesiones activas con cierre remoto e historial de actividad de la cuenta.</li></ul>
+
+  <h2 style="font-size:20px;margin:36px 0 12px;">13. Fuente única de verdad: app + administrador</h2>
+  <p style="font-size:14px;line-height:1.7;margin:0 0 12px;">En este prototipo la app y el panel leen y escriben el mismo almacén (<code>girando-store.js</code>, en el navegador). En producción ese rol lo cumplen la API y la base de datos. Lo que hoy ya se refleja de un lado al otro:</p>
+  <table style="width:100%;border-collapse:collapse;font-size:13.5px;"><thead><tr style="text-align:left;color:#5c6370;font-size:12px;text-transform:uppercase;letter-spacing:.04em;"><th scope="col" style="padding:10px 12px;border-bottom:2px solid #14171f;">Acción en el admin</th><th scope="col" style="padding:10px 12px;border-bottom:2px solid #14171f;">Efecto en la app</th></tr></thead><tbody><tr><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;font-weight:700;">Aprobar, pedir cambios, pausar, rechazar o eliminar una publicación</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">Cambia el estado en Mis publicaciones con el motivo, llega una notificación, se encola un email y la publicación sale o entra de las búsquedas</td></tr><tr><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;font-weight:700;">Verificar, rechazar o suspender una agencia</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">Cambia el distintivo “Agencia verificada” en la ficha, el perfil y las señales de confianza</td></tr><tr><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;font-weight:700;">Aprobar una transferencia</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">La suscripción pasa de Pendiente a Activa y se aplican los nuevos límites</td></tr><tr><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;font-weight:700;">Aprobar o cancelar una promoción</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">Cambia el estado en Estadísticas del vendedor</td></tr><tr><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;font-weight:700;">Editar un plan (precio, límite, estado)</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">La app usa el nuevo límite y el nuevo precio al instante</td></tr><tr><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;font-weight:700;">Crear, activar o pausar una campaña de publicidad</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">Aparece o desaparece del banner de Inicio</td></tr></tbody></table>
+  <p style="font-size:14px;line-height:1.7;margin:12px 0 0;">Y en la otra dirección: publicar, reactivar, suscribirse, avisar una transferencia, pedir verificación, promocionar o registrar una venta aparecen en el admin. Todas las acciones del admin quedan en Auditoría.</p>
+
+  <h2 style="font-size:20px;margin:36px 0 12px;">14. Estados consolidados</h2>
+  <table style="width:100%;border-collapse:collapse;font-size:13.5px;"><thead><tr style="text-align:left;color:#5c6370;font-size:12px;text-transform:uppercase;letter-spacing:.04em;"><th scope="col" style="padding:10px 12px;border-bottom:2px solid #14171f;">Entidad</th><th scope="col" style="padding:10px 12px;border-bottom:2px solid #14171f;">Estados</th></tr></thead><tbody><tr><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;font-weight:700;">Usuario</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">Activo · Pendiente · Suspendido · Bloqueado</td></tr><tr><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;font-weight:700;">Agencia</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">Pendiente · Verificación en revisión · Verificada · Rechazada · Suspendida</td></tr><tr><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;font-weight:700;">Publicación</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">Borrador · Pendiente · Publicada · Pausada · Requiere cambios · Rechazada · Vendida · Expirada · Eliminada</td></tr><tr><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;font-weight:700;">Suscripción</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">Pendiente · Activa · Pago rechazado · En período de gracia · Cancelada · Expirada</td></tr><tr><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;font-weight:700;">Promoción</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">Pendiente · Activa · Pausada · Finalizada · Cancelada</td></tr><tr><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;font-weight:700;">Verificación</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">Pendiente · En revisión · Aprobada · Rechazada · Revocada</td></tr><tr><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;font-weight:700;">Pago</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">Pendiente de verificación · Aprobado · Rechazado</td></tr><tr><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;font-weight:700;">Email</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">Pendiente · Enviado · Fallido</td></tr></tbody></table>
+  <p style="font-size:14px;line-height:1.7;margin:12px 0 0;">Solo aparecen en búsquedas las publicaciones en estado Publicada. “Denunciada” no es un estado: es una alerta sobre una publicación que se revisa en moderación.</p>
+
+  <h2 style="font-size:20px;margin:36px 0 12px;">15. Qué es real y qué es prototipo</h2>
+  <table style="width:100%;border-collapse:collapse;font-size:13.5px;"><thead><tr style="text-align:left;color:#5c6370;font-size:12px;text-transform:uppercase;letter-spacing:.04em;"><th scope="col" style="padding:10px 12px;border-bottom:2px solid #14171f;">Pieza</th><th scope="col" style="padding:10px 12px;border-bottom:2px solid #14171f;">Estado en este prototipo</th><th scope="col" style="padding:10px 12px;border-bottom:2px solid #14171f;">Para producción</th></tr></thead><tbody><tr><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;font-weight:700;">Catálogo de vehículos</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">Datos de ejemplo (6 marcas)</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">Cargar el catálogo completo</td></tr><tr><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;font-weight:700;">Publicaciones, ventas, estadísticas, agencias, reseñas</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">Datos de ejemplo, marcados como tales</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">Reemplazar por datos reales</td></tr><tr><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;font-weight:700;">Mercado Pago</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">Respuesta simulada</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">Checkout Pro o Suscripciones + webhook validado en el backend</td></tr><tr><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;font-weight:700;">Transferencia</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">Flujo real de estados; la aprobación la hace el admin</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">Conciliación bancaria</td></tr><tr><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;font-weight:700;">Cloudinary</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">No conectado. Las fotos quedan solo en el navegador</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">Subida firmada, transformaciones, borrado por API según la retención</td></tr><tr><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;font-weight:700;">Emails</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">Se encolan como Pendiente. No se envían</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">Conectar un proveedor transaccional y registrar Enviado o Fallido</td></tr><tr><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;font-weight:700;">Google (reseñas)</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">Puntaje y cantidad de ejemplo</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">Places API: solo puntaje, cantidad y enlace a la fuente</td></tr><tr><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;font-weight:700;">Sesiones y seguridad</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">Lista de ejemplo</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">Revocación de sesiones en el backend</td></tr><tr><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;font-weight:700;">Publicidad de concesionarias</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">Campañas sin imagen hasta que el anunciante la provea</td><td style="padding:9px 12px;border-bottom:1px solid #eef1f5;vertical-align:top;color:#454b56;">Solo material propio, provisto o con licencia</td></tr></tbody></table>
+
+  <h2 style="font-size:20px;margin:36px 0 12px;">16. Retención de datos</h2>
+  <p style="font-size:14px;line-height:1.7;margin:0;">Se configura en Admin → Retención de datos, con cuatro categorías: operativos, históricos, auditoría y multimedia. Borrar imágenes o datos operativos no afecta la auditoría ni los registros de venta. La auditoría no se puede editar desde la interfaz.</p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      subStates: [
+        { name:'Pendiente', grants:'No', trigger:'Pago iniciado o transferencia avisada, sin confirmar' },
+        { name:'Activa', grants:'Sí', trigger:'Webhook de pago aprobado o transferencia aprobada por el admin' },
+        { name:'Pago rechazado', grants:'Sí (reintentando)', trigger:'Falla la renovación automática en Mercado Pago' },
+        { name:'En período de gracia', grants:'Sí, 7 días', trigger:'Se agotan los reintentos automáticos' },
+        { name:'Cancelada', grants:'Sí, hasta fin del período', trigger:'El usuario cancela; no se renueva' },
+        { name:'Expirada', grants:'No', trigger:'Termina el período de gracia o el período cancelado' },
+      ],
+      pubStates: [
+        { name:'Borrador', visible:'No', next:'Pendiente de revisión · Eliminada' },
+        { name:'Pendiente de revisión', visible:'No', next:'Publicada · Rechazada' },
+        { name:'Publicada', visible:'Sí', next:'Pausada · Vendida · Expirada · Eliminada' },
+        { name:'Pausada', visible:'No', next:'Pendiente de revisión (si hay cupo) · Vendida · Eliminada' },
+        { name:'Vendida', visible:'No (queda en el historial)', next:'—' },
+        { name:'Expirada', visible:'No', next:'Pendiente de revisión (renovar, si hay cupo) · Eliminada' },
+        { name:'Rechazada', visible:'No', next:'Pendiente de revisión (corregir)' },
+        { name:'Eliminada', visible:'No (borrado lógico)', next:'—' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>
