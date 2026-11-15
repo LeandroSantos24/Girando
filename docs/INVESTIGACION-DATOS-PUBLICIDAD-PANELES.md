@@ -2,7 +2,7 @@
 
 Para qué sirve este documento: decidir **cómo medir**, **cómo vender y servir publicidad con inteligencia**, **cómo mostrarle
 resultados a quien paga** y **cómo deben ser los paneles** de Super Admin, Admin, comercios y personas. Está pensado para que
-lo lea el equipo (o el agente) que implementa la fase 4 junto con `docs/10-contexto-girando.md` y `docs/PROMPT-FASE-4.md`.
+lo lea el equipo (o el agente) que implementa la fase 4 junto con `CONTEXTO.md` (los anteriores `10-contexto-girando.md` y `PROMPT-FASE-4.md` están en `docs/historial/`).
 
 Las fuentes están al final. Donde algo es opinión o recomendación propia, se dice.
 
@@ -251,7 +251,7 @@ Configuración (Super Admin)
 
 ---
 
-## 8. Agregado para el prompt de la fase 4 (pegar al final de `PROMPT-FASE-4.md`)
+## 8. Agregado para el prompt de la fase 4 (ya incorporado a `CONTEXTO.md`; el original está en `docs/historial/PROMPT-FASE-4.md`)
 
 > Leé también `docs/INVESTIGACION-DATOS-PUBLICIDAD-PANELES.md`. La medición de publicidad, los reportes de anunciantes y las
 > estadísticas de comercios son **código propio** sobre PostgreSQL (eventos + resúmenes), con impresión visible según MRC,

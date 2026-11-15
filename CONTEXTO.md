@@ -2,7 +2,7 @@
 
 **Versión 1.0 · 15/11/2026 · Estado: borrador para aprobación del dueño (Leandro).**
 Este archivo es la fuente única de contexto. Cualquier persona o agente que trabaje en Girando lo lee primero, completo.
-Reemplaza a `docs/10-contexto-girando.md` y a `docs/PROMPT-FASE-4.md` (quedan como historial).
+Reemplaza a `docs/historial/10-contexto-girando.md` y a `docs/historial/PROMPT-FASE-4.md` (quedan como historial).
 Si algo de otro documento contradice a este, manda este.
 
 ---

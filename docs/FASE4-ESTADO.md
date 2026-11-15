@@ -3,6 +3,28 @@
 Archivo de traspaso: cualquier sesión que retome la fase 4 empieza por acá.
 Todo local. Nada desplegado. Nada de datos ni pagos reales.
 
+## Bitácora por paso (CONTEXTO.md §9) — sesión del 15/11/2026 por la noche
+
+> **Límite de esta sesión:** se trabajó sobre un clon del repo, sin Docker ni las dependencias de Python de la API
+> (FastAPI, SQLAlchemy, Alembic, psycopg). Por eso **pytest de la API NO se corrió en esta sesión**. Todo lo que es SQL
+> se probó contra un PostgreSQL 16 real con `psql`. Cada paso dice qué se verificó y qué falta correr con `make test`.
+
+| Paso | Estado | Verificado | Falta |
+|---|---|---|---|
+| 1. Git | Ya estaba hecho (commit inicial `a970979` subido por el dueño). `.gitignore` revisado: excluye `.env`, `.env.*`, `*.rdb`, `media/` | `git ls-files` no contiene `.env` | **El repo en GitHub está público**; CONTEXTO.md dice privado (decisión del dueño) |
+| 2. Limpieza fuera del repo | **No hecho**: la sesión no puede borrar archivos en la computadora del dueño | — | Borrar a mano `../backend/`, `../Claude outputs/` y `../girando-completo.zip` |
+| 3. Limpieza dentro del repo | Hecho | Búsqueda de referencias antes de borrar; `python3 scripts/build_web.py` no cambia los HTML | — |
+
+### Paso 3 · qué se borró o movió y por qué
+- `web/ios-frame.jsx` **borrado**: marco de iPhone del prototipo. Ninguna página lo carga (no está en `web/src/*.html`,
+  ni en `web/Dockerfile`, ni en nginx); solo lo nombraban un comentario y el prototipo de `design/`.
+- `docs/10-contexto-girando.md` y `docs/PROMPT-FASE-4.md` **movidos a `docs/historial/`**: superados por `CONTEXTO.md`.
+  Referencias actualizadas en `CONTEXTO.md` y en `docs/INVESTIGACION-DATOS-PUBLICIDAD-PANELES.md`.
+- `Makefile` **recreado** según el README (`setup`, `dev`, `down`, `logs`, `test`, `reset`, `reset-dev-db`, `build-web`,
+  `superadmin`) más `lint`. El README lo documentaba pero no estaba en el repo.
+- Scripts: no hay duplicados (`build_web.py`, `dev-web.mjs`, `e2e_checkpoint.py`, `generar_diccionario.py` están todos referenciados).
+- **Pendiente detectado**: el README menciona `.github/workflows/ci.yml` y ese archivo no existe en el repo.
+
 ## Resultado de tests en este punto
 
 - Fases 1 a 3: **62 de 62 verdes** con las migraciones 0004–0007 aplicadas.
