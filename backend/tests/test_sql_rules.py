@@ -29,4 +29,9 @@ def test_sql_business_rules():
         run("-f", str(f), db="girando_sqltest")
     r = run("-f", str(ROOT / "tests" / "sql" / "900_flujos.sql"), db="girando_sqltest")
     assert r.stderr.count("NOTICE:  ok") >= 50
+    # Arreglos de la fase 4 (RLS de mensajes sin recursión, verificación de repuestos) sobre el esquema completo
+    for f in sorted(p for p in (ROOT / "sql").glob("*.sql") if p.name != "0002_api_grants.sql"):
+        run("-f", str(f), db="girando_sqltest")
+    r = run("-f", str(ROOT / "tests" / "sql" / "910_fase4_arreglos.sql"), db="girando_sqltest")
+    assert r.stderr.count("NOTICE:  ok") >= 11
     run("-c", "DROP DATABASE IF EXISTS girando_sqltest")

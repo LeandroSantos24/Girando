@@ -25,6 +25,23 @@ Todo local. Nada desplegado. Nada de datos ni pagos reales.
 - Scripts: no hay duplicados (`build_web.py`, `dev-web.mjs`, `e2e_checkpoint.py`, `generar_diccionario.py` están todos referenciados).
 - **Pendiente detectado**: el README menciona `.github/workflows/ci.yml` y ese archivo no existe en el repo.
 
+### Paso 4 · tests en rojo de la fase 4
+Tres causas, dos de ellas en la base:
+1. **Recursión RLS en `messages`**: la política `msg_select` consultaba `app.messages` dentro de sí misma. Ahora usa
+   `app.conversation_has_message_report(uuid)` (`SECURITY DEFINER`, devuelve solo un booleano). El alcance no cambia:
+   participantes, o moderación solo si hay un mensaje reportado. → `backend/sql/0008_fase4_arreglos.sql`.
+2. **Casa de repuestos que quedaba `pending`**: la causa no estaba en el endpoint sino en el trigger
+   `tg_verifications_effects`, que solo propagaba el resultado a la cuenta cuando el producto era de tipo `agency`;
+   el de repuestos es `onsite_visit`. Ahora propaga ambos. El candado de pago (`PAGO_REQUERIDO_ANTES_DE_VERIFICAR`) sigue igual.
+3. **Rate limit de registro en los tests**: el helper `register` de `conftest.py` reinicia solo el bucket `register_ip`
+   (`ratelimit.reset_memory(bucket)`); los demás límites siguen contando.
+
+Verificado con PostgreSQL 16 real: `tests/sql/910_fase4_arreglos.sql` (nuevo, **11/11 ok**), con control negativo
+(sin 0008 falla con `infinite recursion detected in policy for relation "messages"` y con la cuenta en `pending`).
+`tests/sql/900_flujos.sql` sigue en **50/50**. `ruff` limpio en los archivos tocados.
+**Falta:** correr `make test` para confirmar que los 6 tests de `test_fase4.py` pasan a verde. Los de taxis y servicios
+se diagnosticaron como arrastre del rate limit; si quedara otro rojo, es un hallazgo nuevo.
+
 ## Resultado de tests en este punto
 
 - Fases 1 a 3: **62 de 62 verdes** con las migraciones 0004–0007 aplicadas.

@@ -85,6 +85,9 @@ def new_client():
 
 def register(c, email=None, password="Clave-segura-123", name="Tester"):
     email = email or f"u{uuid.uuid4().hex[:10]}@girando.test"
+    # Los tests largos registran más de 5 usuarios desde la misma IP: el límite de registro (5/hora por IP)
+    # se reinicia acá. Solo ese bucket; los demás límites siguen contando dentro del test.
+    ratelimit.reset_memory(ratelimit.REGISTER_IP.bucket)
     r = c.post("/api/auth/register", json={"email": email, "password": password, "display_name": name, "accept_terms": True})
     assert r.status_code == 201, r.text
     return email, r.json()["user"]

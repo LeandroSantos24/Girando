@@ -60,9 +60,13 @@ class _Memory:
                 self._d = {k: v for k, v in self._d.items() if v[1] > now}
             return count
 
-    def reset(self):
+    def reset(self, bucket: str | None = None):
         with self._lock:
-            self._d.clear()
+            if bucket is None:
+                self._d.clear()
+            else:
+                prefix = f"rl:{bucket}:"
+                self._d = {k: v for k, v in self._d.items() if not k.startswith(prefix)}
 
 
 _memory = _Memory()
@@ -106,5 +110,6 @@ def hit(limit: Limit, ident: str) -> None:
         raise err(429, "DEMASIADOS_INTENTOS", "Demasiados intentos. Probá de nuevo en unos minutos.", {"retry_after": retry})
 
 
-def reset_memory() -> None:
-    _memory.reset()
+def reset_memory(bucket: str | None = None) -> None:
+    """Solo para tests: vacía el contador en memoria (todo, o un único bucket)."""
+    _memory.reset(bucket)
