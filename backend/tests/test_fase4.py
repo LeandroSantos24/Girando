@@ -68,6 +68,7 @@ def _publish_post(client, pid):
 
 
 JOB = {"role": "driver", "license_required": True, "license_classes": ["D1"], "workday": "full_time", "modality": "on_route"}
+TAXI_NOTICE = "La transferencia del permiso requiere autorización de la autoridad de transporte."
 TAXI = {"offer_kind": "permit_only", "service_type": "taxi", "permit_number": "1234", "permit_holder_declared": "Titular Declarado",
         "permit_price": "30000000", "has_meter": True}
 
@@ -427,11 +428,15 @@ def test_taxi_post_shows_legal_notice_and_seal_is_only_by_girando(client):
     code = _publish_post(client, pid)
     anon = new_client()
     res = anon.get("/api/posts", params={"vertical": "taxi", "offer_kind": "permit_only", "service_type": "taxi"}).json()
-    assert "Ley 9086" in res["legal_notice"] and "no garantiza" in res["legal_notice"]
+    assert res["legal_notice"] == TAXI_NOTICE                                # único texto legal de la sección: el aviso corto
     hit = next(i for i in res["items"] if i["public_code"] == code)
     assert hit["permit_verified"] is False and hit["permit_number"] == "1234" and "permit_holder_declared" not in hit   # el titular nunca es público
     det = anon.get(f"/api/posts/{code}").json()
-    assert "Dirección de Transporte" in det["legal_notice"] and "permit_holder_declared" not in det and det["vehicle_age_note"]
+    assert det["legal_notice"] == TAXI_NOTICE and "permit_holder_declared" not in det
+    assert "vehicle_age_note" not in det and "ntig" not in det["legal_notice"]   # sin texto ni validación de antigüedad
+    old = _post(_user("Taxi viejo"), "taxi", {**TAXI, "offer_kind": "taxi_with_permit", "version_id": catalog_ids(client)["version_id"],
+                                                      "vehicle_year": 1975}, price_amount="9000000")
+    assert old.status_code == 201, old.text                                  # un taxi de cualquier año se publica
     assert all(i["public_code"] != code for i in anon.get("/api/posts", params={"vertical": "taxi", "verified": True}).json()["items"])
     assert client.post(f"/api/admin/posts/{pid}/seal", json={"verified": True, "note": "Me lo verifico solo"}).status_code == 403
     with pytest.raises(DBAPIError), unit_of_work("app", _uid(client), RequestContext()) as c:

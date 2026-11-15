@@ -48,7 +48,7 @@ class TaxiDetail(StrictModel):
     permit_number: Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9 ./-]{1,20}$")] | None = None
     permit_holder_declared: Annotated[str, StringConstraints(max_length=120)] | None = None
     version_id: UUID | None = None
-    vehicle_year: Annotated[int, Field(ge=1980, le=2100)] | None = None
+    vehicle_year: Annotated[int, Field(ge=1900, le=2100)] | None = None
     fuel: Fuel | None = None
     has_cng: bool = False
     has_meter: bool = False
@@ -477,7 +477,6 @@ def post_detail(code: str, request: Request, user: CurrentUser | None = Depends(
                                      FROM api_public.agencies WHERE id = :a""", {"a": d["agency_id"]}) if d["agency_id"] else None
         if base["vertical"] == "taxi":
             d["legal_notice"] = scalar(conn, "SELECT value #>> '{}' FROM api_public.settings WHERE key = 'taxi.legal_notice'")
-            d["vehicle_age_note"] = scalar(conn, "SELECT value #>> '{}' FROM api_public.settings WHERE key = 'taxi.vehicle_age_note'")
     d["is_mine"] = False
     if user:
         with unit_of_work("app", user.id, ctx) as conn:

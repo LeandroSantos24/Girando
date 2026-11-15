@@ -158,16 +158,10 @@ SETTINGS = [
      "según su evaluación. La cuota estimada se calcula con sistema francés sobre la TNA informada y no incluye seguros, gastos ni impuestos; "
      "el costo total es el CFT. Girando no presta dinero ni intermedia créditos: muestra información cargada por la agencia o la entidad, con su vigencia.",
      "Leyenda de la calculadora y de las ofertas de financiación", True),
+    # Decisión del dueño (CONTEXTO.md §2): taxis sin límite de antigüedad ni validaciones. Solo este aviso corto.
     ("taxi.legal_notice",
-     "El permiso de taxi o remis lo otorga el Estado provincial (Ley 9086 de Movilidad de Mendoza). No se puede transferir sin autorización "
-     "administrativa previa: el trámite se hace ante la Dirección de Transporte y el nuevo titular tiene que cumplir los mismos requisitos. "
-     "Girando publica lo que declara quien vende y no garantiza la transferencia ni la vigencia del permiso.",
-     "Aviso fijo de la sección Taxis y permisos", True),
-    ("taxi.vehicle_age_note",
-     "Antigüedad del vehículo (Ley 9086, art. 50): taxi hasta 8 años, o 10 si está convertido a GNC; remis hasta 5, o 6 con GNC. La unidad que "
-     "entra por renovación no puede superar 5 años (taxi) o 3 (remis). Hubo prórrogas y excepciones por decreto: confirmá el régimen vigente "
-     "en la Dirección de Transporte antes de comprar.",
-     "Nota sobre antigüedad de vehículos de taxi y remis. A CONFIRMAR con la Dirección de Transporte antes de lanzar.", True),
+     "La transferencia del permiso requiere autorización de la autoridad de transporte.",
+     "Aviso corto de la sección Taxis (único texto legal de la sección)", True),
     ("ads.min_impressions_for_ctr", 100, "Impresiones mínimas para mostrar un porcentaje de clics", False),
 ]
 

@@ -42,6 +42,17 @@ Verificado con PostgreSQL 16 real: `tests/sql/910_fase4_arreglos.sql` (nuevo, **
 **Falta:** correr `make test` para confirmar que los 6 tests de `test_fase4.py` pasan a verde. Los de taxis y servicios
 se diagnosticaron como arrastre del rate limit; si quedara otro rojo, es un hallazgo nuevo.
 
+### Paso 5 · Taxis sin antigüedad
+- No existía validación de antigüedad por ley en el código ni en la base. Sí había: la nota `taxi.vehicle_age_note`
+  (texto de la Ley 9086), su campo `vehicle_age_note` en `GET /api/posts/{code}`, un aviso legal largo específico de
+  Mendoza y un piso de año 1980 en `taxi_posts` (más alto que el de vehículos).
+- Ahora: único texto, `taxi.legal_notice` = “La transferencia del permiso requiere autorización de la autoridad de
+  transporte.” (editable en Admin → Configuración). Nota y campo eliminados. Año de taxi 1900–2100, igual que `vehicles`
+  (control de plausibilidad, no de antigüedad). → `backend/sql/0009_taxis_sin_antiguedad.sql`, `seeds/base_data.py`,
+  `routers/verticals.py`.
+- Test actualizado (`test_taxi_post…`): el aviso es exactamente el corto, no existe `vehicle_age_note` y un taxi modelo 1975 se publica.
+- Verificado: la migración aplica sobre base vacía y `tx_year` queda 1900–2100; ruff limpio. **Falta:** `make test`.
+
 ## Resultado de tests en este punto
 
 - Fases 1 a 3: **62 de 62 verdes** con las migraciones 0004–0007 aplicadas.
@@ -84,13 +95,9 @@ se diagnosticaron como arrastre del rate limit; si quedara otro rojo, es un hall
 
 ## Hallazgos de cumplimiento (con fuente)
 
-- **Taxis, antigüedad del vehículo**: el contexto del proyecto decía “10 años para incorporarse, uso hasta 13”.
-  La Ley 9086 art. 50 dice otra cosa para taxi y remis: taxi 8 años (10 con GNC), remis 5 (6 con GNC), y la unidad
-  que entra por renovación no puede superar 5 (taxi) o 3 (remis). Los 13 años son del Decreto 2731/2024 y aplican a
-  otros servicios (contratado, escolar, turístico). El texto que muestra Girando quedó con lo del art. 50 y un aviso
-  de confirmar en la Dirección de Transporte. **Decisión pendiente del dueño: validar con un gestor antes de lanzar.**
-  Fuentes: https://www.mendoza.gov.ar/wp-content/uploads/sites/20/2024/02/Ley-de-Movilidad-No-9086.pdf ·
-  https://www.losandes.com.ar/politica/el-gobierno-sumara-400-permisos-de-taxis-en-mendoza-como-estaran-distribuidos
+- **Taxis, antigüedad del vehículo**: **resuelto por decisión del dueño (CONTEXTO.md §2): sin límite de antigüedad ni
+  validaciones.** Girando no muestra ni aplica ningún régimen de antigüedad. El análisis anterior de la Ley 9086 de Mendoza
+  queda en el historial de Git; al ser un portal de todo el país, cada jurisdicción tiene su propio régimen.
 - **Transferencia del permiso**: Ley 9086 art. 46 b: no se transfiere sin autorización administrativa previa,
   recién a los dos años de otorgado, y el nuevo titular debe cumplir las mismas condiciones.
 - **Publicidad de crédito**: el BCRA exige que el CFT vaya destacado (tipografía al menos cinco veces mayor que la de
