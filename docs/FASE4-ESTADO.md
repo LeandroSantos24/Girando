@@ -62,7 +62,7 @@ se diagnosticaron como arrastre del rate limit; si quedara otro rojo, es un hall
   que ahora funciona aunque la API no arranque.
 - **Falta (necesita Docker):** `make reset-dev-db`, `make test` y correr `migrate` por segunda vez con Alembic (debe ser un no-op).
 
-### Paso 7 · todo el país con Georef — **herramientas listas, dataset sin descargar**
+### Paso 7 · todo el país con Georef — **hecho** (dataset descargado y cargado el 16/11; lo de abajo es la bitácora de la sesión anterior)
 - `scripts/georef_descargar.py` (`make georef`): baja provincias, departamentos y localidades de la descarga completa oficial
   (`https://apis.datos.gob.ar/georef/api/v2.0/{entidad}.json`), los normaliza a CSV y escribe `FUENTE.json` (URLs, fecha, filas, sha256).
 - `backend/app/seeds/georef/cargar.sql` + `seed-base`: carga idempotente por código oficial; adopta las filas viejas sin
@@ -74,18 +74,30 @@ se diagnosticaron como arrastre del rate limit; si quedara otro rojo, es un hall
   el script corta con un mensaje claro y no escribe nada.
 - A revisar al cargar: `GET /api/geo?level=locality` devuelve todas las localidades sin paginar (hoy solo se usa con `parent_id`).
 
-### Pasos 8, 9 y 10 — **no empezados**
+### Frontend de fase 4, publicidad A y B, cierre — **no empezados** (hoy son los pasos 3 a 6 de CONTEXTO.md §9)
 Frontend de la fase 4 (con WhatsApp por `/api/out`), publicidad etapas A y B, y el cierre (docs, ruff, bandit, E2E) necesitan
 un entorno donde se pueda levantar la API (Docker, o Python con FastAPI/SQLAlchemy/psycopg) para probar lo que se escribe.
 La próxima sesión empieza por: `make reset-dev-db && make test`, confirmar los 80 tests, `make georef`, y seguir con el paso 8.
 
 ## Resultado de tests en este punto
 
-**LÍNEA BASE VERDE — tercera corrida (16/11/2026, 01:35, máquina del dueño, commit `f271087`): 80/80, 0 rojos, 0 salteados.**
-`make reset-dev-db` (Alembic `base_0001` + seeds) y `make test` completos en Docker, con los tests SQL incluidos.
+**LÍNEA BASE VERDE (16/11/2026, 01:40, máquina del dueño, Docker).**
 
-Pendiente del paso 1 del encargo nuevo: `make lint` (ruff + bandit dentro de Docker), correr `migrate` por segunda vez
-(debe ser un no-op), `git push origin main` y `make georef`. Después: paso 3 (frontend de la fase 4).
+| Verificación | Resultado |
+|---|---|
+| `make test` | **80/80**, 0 rojos, 0 salteados (con todo el país cargado) |
+| Tests SQL | 900 = 50 · 910 = 15 · 920 = 8 |
+| `make lint` | ruff limpio · bandit sin hallazgos |
+| Alembic | `base_0001` desde base vacía · segunda corrida de `migrate`: no hace nada |
+| Georef | 4.581 filas (24 provincias, 529 departamentos, 4.028 localidades), 0 omitidas |
+| E2E | Sin correr (no hay frontend de fase 4) |
+
+## Próximo paso para quien continúa
+
+1. Paso 0: comprobar Docker, `make reset-dev-db && make test && make lint`. Tiene que dar lo de la tabla de arriba.
+2. Confirmar que `backend/app/seeds/georef/*.csv`, `FUENTE.json` y el `Makefile` (ruff con `--no-cache`) estén versionados y subidos.
+3. Seguir con **CONTEXTO.md §9, paso 3 (frontend de la fase 4)**. Los pasos 4, 5 y 6 van después, en ese orden.
+4. Antes de los selectores de ubicación: limitar `GET /api/geo?level=locality` (hoy devuelve 4.028 filas).
 
 Historia de cómo se llegó al verde (cinco bugs reales que estaban tapados):
 
@@ -136,17 +148,9 @@ habían ejecutado; dos causas, ya corregidas (falta volver a correr):
 | Jobs: vencimiento de posts, límites de plan, retención de mensajes, avisos de búsquedas guardadas | `app/cli.py` | escritos |
 | Seeds: planes 60 / repuestos / servicios / empresa, entidades, textos legales de taxis y financiación, checklist de repuestos | `seeds/base_data.py` | listo |
 
-## En rojo ahora (causa conocida)
+## En rojo ahora
 
-1. `test_candidate_contacts…`, `test_message_retention…`, `test_taxi_post…`, `test_service_provider…`:
-   **recursión infinita en la política RLS de `messages`** (la subconsulta de no leídos sobre `app.messages`
-   dispara la política que vuelve a consultar conversaciones/mensajes). Arreglo: función `SECURITY DEFINER`
-   para saber si el usuario participa de la conversación y usarla en las políticas, en una migración 0008.
-   Los tests de taxis y servicios caen por arrastre (registran muchos usuarios y chocan con el rate limit
-   de registro: 5 por hora por IP); hay que reiniciar ese contador en el helper `register` de `conftest.py`.
-2. `test_parts_store…`: `POST /api/admin/agencies/{id}/verify` devuelve `pending` para una casa de repuestos;
-   revisar el endpoint en `routers/admin.py` o `business.py`.
-3. `test_recommendations…`: mismo rate limit de registro.
+Nada. Ver la tabla de arriba.
 
 ## Falta
 
