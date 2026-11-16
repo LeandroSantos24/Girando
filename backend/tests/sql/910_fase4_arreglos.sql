@@ -113,4 +113,20 @@ SELECT t.ok((SELECT status = 'verified' AND verified_at IS NOT NULL FROM app.age
 UPDATE app.verifications SET status = 'revoked', decision_reason = 'El local cerró' WHERE id = :'ver_id';
 SELECT t.ok((SELECT status = 'revoked' AND verified_at IS NULL FROM app.agencies WHERE id = :'a_id'), 'repuestos: revocar quita el sello');
 RESET ROLE;
+
+-- ------------------------------------------------------------------ C. vistas públicas como visitante sin sesión
+-- Las funciones de app están revocadas a PUBLIC: si una vista de api_public usa una sin EXECUTE para girando_anon,
+-- el listado público falla con "permission denied for function …" (pasó con api_public.posts y subscription_grants).
+SET ROLE girando_anon;
+DO $$
+DECLARE v text; n bigint; total int := 0;
+BEGIN
+  FOR v IN SELECT viewname FROM pg_views WHERE schemaname = 'api_public' ORDER BY 1 LOOP
+    EXECUTE format('SELECT count(*) FROM api_public.%I', v) INTO n;
+    total := total + 1;
+  END LOOP;
+  IF total < 19 THEN RAISE EXCEPTION 'FALLÓ: se esperaban al menos 19 vistas públicas y hay %', total; END IF;
+  RAISE NOTICE 'ok: el visitante sin sesión puede leer las % vistas de api_public', total;
+END $$;
+RESET ROLE;
 ROLLBACK;

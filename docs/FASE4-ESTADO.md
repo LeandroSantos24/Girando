@@ -81,11 +81,25 @@ La próxima sesión empieza por: `make reset-dev-db && make test`, confirmar los
 
 ## Resultado de tests en este punto
 
-- **pytest (API): sin correr desde el checkpoint anterior** (62/62 fases 1–3, 12/18 fase 4). Los arreglos de los pasos 4 y 5
-  apuntan a dejar 18/18, pero falta confirmarlo con `make test`.
-- **Tests SQL con PostgreSQL 16 (corridos en esta sesión):** `900_flujos.sql` 50/50 · `910_fase4_arreglos.sql` 11/11 · `920_georef.sql` 8/8.
-- **Migraciones:** base única aplicada dos veces desde base vacía, esquema idéntico al anterior (`pg_dump`).
-- **ruff:** limpio en `backend/` y `scripts/georef_descargar.py` (se corrigieron 2 avisos previos de orden de imports). **bandit, Alembic, reset-dev-db y E2E: sin correr.**
+**Primera corrida real con Docker (15/11/2026, 21:55, máquina del dueño): 80 tests → 74 verdes, 5 rojos, 1 salteado.**
+`reset-dev-db` y Alembic (`base_0001`) funcionaron. Los arreglos del paso 4 se confirmaron: ya no hay recursión RLS y la
+casa de repuestos queda `verified`. Los 5 rojos eran dos fallas que antes quedaban tapadas, ya corregidas (falta volver a correr):
+
+1. **4 tests de verticales** (`parts_store`, `taxi`, `service_provider`, `candidate_contacts`): `GET /api/posts` sin sesión
+   devolvía 403 `permission denied for function subscription_grants`. La vista `api_public.posts` usa esa función y las
+   funciones de `app` están revocadas a PUBLIC; al visitante le faltaba `EXECUTE`. **El listado público de las cuatro
+   verticales nunca funcionó sin sesión.** Arreglo: `GRANT EXECUTE … TO girando_anon` (función pura, no lee tablas).
+   Reproducido y verificado con PostgreSQL 16; nuevo control en `910_fase4_arreglos.sql` que lee las 19 vistas públicas como anónimo.
+2. **`test_cors_only_allowed_origins`**: el test espera `http://localhost:3000` (valor por defecto) pero en Docker el `.env`
+   trae `CORS_ORIGINS=http://localhost:3100`. No es un bug de la API: `conftest.py` ahora fija el valor para los tests.
+3. **El salteado** era `test_sql_business_rules`: la imagen de tests no tenía `psql`, así que los tests SQL (900, 910, 920)
+   no corrían en `make test`. El Dockerfile de desarrollo ahora instala `postgresql-client`.
+
+También: el Dockerfile normaliza permisos (`chmod -R a+rX /app`), porque 20 archivos estaban en modo 600 en el disco y
+la API no los podía leer dentro del contenedor.
+
+- **Tests SQL con PostgreSQL 16:** `900_flujos.sql` 50/50 · `910_fase4_arreglos.sql` 12/12 · `920_georef.sql` 8/8.
+- **Falta:** volver a correr `make reset-dev-db && make test` (objetivo 80/80), bandit, `migrate` por segunda vez, E2E.
 
 ## Hecho (backend y base)
 

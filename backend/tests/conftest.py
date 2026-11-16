@@ -24,6 +24,8 @@ os.environ.update({
     "MEDIA_ROOT": "/tmp/girando-test-media",
     "RATE_LIMIT_ENABLED": "true",
     "IMAGE_STORAGE": "local_dev",
+    # Fijo para los tests: en Docker el .env trae el origen del entorno local (3100) y pisaba el valor por defecto
+    "CORS_ORIGINS": "http://localhost:3000",
 })
 
 from sqlalchemy import create_engine, text  # noqa: E402

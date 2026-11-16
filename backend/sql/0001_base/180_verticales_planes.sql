@@ -796,6 +796,10 @@ WHERE p.status = 'published' AND p.expires_at > now()
   AND (p.vertical <> 'part' OR (a.status = 'verified' AND EXISTS (
         SELECT 1 FROM app.subscriptions x WHERE x.agency_id = p.agency_id AND app.subscription_grants(x))));
 GRANT SELECT ON api_public.posts TO girando_anon, girando_app, girando_worker;
+-- La vista evalúa subscription_grants() con los permisos de quien consulta. El visitante sin sesión necesita EXECUTE
+-- o el listado público de las verticales responde "permission denied for function subscription_grants".
+-- Es una función pura sobre la fila que recibe: no lee tablas ni expone datos (el anónimo no puede leer subscriptions).
+GRANT EXECUTE ON FUNCTION app.subscription_grants(app.subscriptions) TO girando_anon;
 
 CREATE OR REPLACE VIEW api_public.sponsored WITH (security_barrier) AS
 SELECT p.id AS promotion_id, p.type, p.placement, p.priority, p.disclosure_label,
