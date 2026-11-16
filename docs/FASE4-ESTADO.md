@@ -98,7 +98,19 @@ casa de repuestos queda `verified`. Los 5 rojos eran dos fallas que antes quedab
 También: el Dockerfile normaliza permisos (`chmod -R a+rX /app`), porque 20 archivos estaban en modo 600 en el disco y
 la API no los podía leer dentro del contenedor.
 
-- **Tests SQL con PostgreSQL 16:** `900_flujos.sql` 50/50 · `910_fase4_arreglos.sql` 12/12 · `920_georef.sql` 8/8.
+**Segunda corrida (16/11/2026, 01:10): 80 tests → 77 verdes, 3 rojos, 0 salteados.** Los 5 anteriores quedaron resueltos, la
+imagen se construyó con `psql` y los tests SQL corrieron dentro de `make test`. Los 3 rojos nuevos eran líneas que nunca se
+habían ejecutado; dos causas, ya corregidas (falta volver a correr):
+
+4. **Sello de verificación (taxis y servicios), 2 tests:** `POST /api/admin/posts/{id}/seal` devolvía 422 siempre. La ruta
+   genérica `/admin/posts/{id}/{action}` estaba registrada antes y capturaba `seal` como una acción inválida.
+   **El sello "permiso verificado" / "matrícula verificada" nunca se pudo poner.** Arreglo: `/seal` va antes.
+5. **Asunto de la conversación, 1 test:** quien contacta no es dueño de la publicación y RLS no le deja leer
+   `listings`/`posts`, así que veía la conversación sin título y con vertical `vehicle` aunque fuera un empleo.
+   Arreglo: `app.conversation_subject()` (`SECURITY DEFINER`, solo para participantes, solo datos ya públicos de la ficha).
+   Verificado en SQL: la compradora ve el asunto, un tercero no.
+
+- **Tests SQL con PostgreSQL 16:** `900_flujos.sql` 50/50 · `910_fase4_arreglos.sql` 15/15 · `920_georef.sql` 8/8.
 - **Falta:** volver a correr `make reset-dev-db && make test` (objetivo 80/80), bandit, `migrate` por segunda vez, E2E.
 
 ## Hecho (backend y base)

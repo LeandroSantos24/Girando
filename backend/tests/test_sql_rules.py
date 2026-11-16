@@ -31,7 +31,7 @@ def test_sql_business_rules():
     assert r.stderr.count("NOTICE:  ok") >= 50
     # Arreglos de la fase 4: RLS de mensajes sin recursión y verificación presencial de repuestos
     r = run("-f", str(ROOT / "tests" / "sql" / "910_fase4_arreglos.sql"), db="girando_sqltest")
-    assert r.stderr.count("NOTICE:  ok") >= 12
+    assert r.stderr.count("NOTICE:  ok") >= 15
     # Cargador de Georef (provincias, departamentos, localidades): idempotente y sin duplicados
     r = run("-f", str(ROOT / "tests" / "sql" / "920_georef.sql"), db="girando_sqltest")
     assert r.stderr.count("NOTICE:  ok") >= 8

@@ -176,3 +176,26 @@ CREATE INDEX IF NOT EXISTS ae_user_recent_idx ON analytics_events (user_id, occu
 ALTER TABLE notifications DROP CONSTRAINT IF EXISTS nf_entity_type;
 ALTER TABLE notifications ADD CONSTRAINT nf_entity_type CHECK (entity_type IS NULL OR entity_type IN
   ('listing','conversation','subscription','payment','verification','agency','sale','promotion','saved_search','report','user','post','financing_offer'));
+
+-- ---------------------------------------------------------------------
+-- Asunto de una conversación para sus participantes.
+-- Quien contacta NO es dueño de la publicación, y RLS de listings/posts solo deja leer al dueño y al equipo:
+-- con un JOIN directo el comprador veía el asunto vacío y la vertical caía en 'vehicle'.
+-- Devuelve solo datos que ya son públicos en la ficha (título, código, vertical, estado, nombre comercial)
+-- y solo si quien consulta participa de la conversación.
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION app.conversation_subject(p_conv uuid)
+RETURNS TABLE (subject_title text, subject_code text, vertical text, subject_status text, agency_name text)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = app, public AS $$
+  SELECT coalesce(l.title, p.title)::text, coalesce(l.public_code, p.public_code)::text,
+         coalesce(p.vertical::text, 'vehicle'), coalesce(l.status::text, p.status::text), a.trade_name::text
+    FROM app.conversations c
+    LEFT JOIN app.listings l ON l.id = c.listing_id
+    LEFT JOIN app.posts p ON p.id = c.post_id
+    LEFT JOIN app.agencies a ON a.id = c.seller_agency_id
+   WHERE c.id = p_conv AND app.is_conversation_participant(c.id)
+$$;
+COMMENT ON FUNCTION app.conversation_subject(uuid) IS
+  'Asunto de la conversación (título, código, vertical, estado, nombre comercial) para sus participantes. SECURITY DEFINER: el comprador no puede leer listings/posts ajenos por RLS.';
+REVOKE ALL ON FUNCTION app.conversation_subject(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION app.conversation_subject(uuid) TO girando_app, girando_worker;

@@ -53,17 +53,16 @@ class MessageIn(StrictModel):
 
 
 CONV_SQL = """SELECT c.id, c.status::text AS status, c.listing_id, c.post_id, c.last_message_at, c.created_at,
-       (c.buyer_user_id = app.me()) AS i_am_buyer, c.buyer_user_id, c.seller_user_id, c.seller_agency_id, a.trade_name AS agency_name,
-       coalesce(l.title, p.title) AS subject_title, coalesce(l.public_code, p.public_code) AS subject_code,
-       coalesce(p.vertical::text, 'vehicle') AS vertical, coalesce(l.status::text, p.status::text) AS subject_status,
+       (c.buyer_user_id = app.me()) AS i_am_buyer, c.buyer_user_id, c.seller_user_id, c.seller_agency_id, s.agency_name,
+       s.subject_title, s.subject_code, coalesce(s.vertical, 'vehicle') AS vertical, s.subject_status,
        (SELECT count(*) FROM app.messages m WHERE m.conversation_id = c.id AND m.read_at IS NULL AND m.deleted_at IS NULL
            AND m.visibility = 'visible'
            AND m.sender_side::text <> (CASE WHEN c.buyer_user_id = app.me() THEN 'buyer' ELSE 'seller' END)) AS unread,
        (SELECT left(m.body, 120) FROM app.messages m WHERE m.conversation_id = c.id AND m.deleted_at IS NULL AND m.visibility = 'visible'
          ORDER BY m.created_at DESC LIMIT 1) AS last_message
   FROM app.conversations c
-  LEFT JOIN app.listings l ON l.id = c.listing_id LEFT JOIN app.posts p ON p.id = c.post_id
-  LEFT JOIN app.agencies a ON a.id = c.seller_agency_id"""
+  LEFT JOIN LATERAL app.conversation_subject(c.id) s ON true"""
+# El asunto sale de app.conversation_subject(): quien contacta no puede leer listings/posts ajenos por RLS.
 
 
 def _names(ctx, convs: list[dict]) -> None:

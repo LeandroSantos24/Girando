@@ -500,25 +500,7 @@ class ModIn(StrictModel):
     reason: Annotated[str, StringConstraints(min_length=3, max_length=500)] | None = None
 
 
-POST_ACTIONS = {"approve": "published", "request_changes": "requires_changes", "reject": "rejected", "pause": "paused",
-                "reactivate": "published", "delete": "deleted"}
-
-
-@router.post("/admin/posts/{post_id}/{action}")
-def moderate_post(post_id: UUID, action: Literal["approve", "request_changes", "reject", "pause", "reactivate", "delete"], body: ModIn,
-                  user: CurrentUser = Depends(MOD)):
-    ratelimit.hit(ratelimit.ADMIN_USER, str(user.id))
-    if action in ("request_changes", "reject", "pause", "delete") and not body.reason:
-        raise err(422, "MOTIVO_OBLIGATORIO")
-    reason = clean_text(body.reason)
-    with unit_of_work("app", user.id, user.ctx, reason=reason or f"Moderación: {action}") as conn:
-        if not scalar(conn, "SELECT 1 FROM app.posts WHERE id = :p", {"p": post_id}):
-            raise err(404, "NO_ENCONTRADA", "Publicación inexistente.")
-        conn.execute(text("UPDATE app.posts SET status = CAST(:s AS app.listing_status), status_reason = coalesce(:r, status_reason) WHERE id = :p"),
-                     {"s": POST_ACTIONS[action], "r": reason, "p": post_id})
-        return _private(conn, post_id)
-
-
+# OJO con el orden: /seal va ANTES de la ruta genérica /{action}; si no, FastAPI la toma como una acción inválida (422).
 class SealIn(StrictModel):
     verified: bool
     note: Annotated[str, StringConstraints(min_length=5, max_length=500)]
@@ -539,4 +521,23 @@ def seal_post(post_id: UUID, body: SealIn, user: CurrentUser = Depends(MOD)):
             raise err(422, "SIN_SELLO", "Esta sección no tiene sello por publicación (repuestos usa la verificación del comercio).")
         if not n:
             raise err(409, "SIN_DATO_DECLARADO", "La publicación no declara número de permiso o matrícula para verificar.")
+        return _private(conn, post_id)
+
+
+POST_ACTIONS = {"approve": "published", "request_changes": "requires_changes", "reject": "rejected", "pause": "paused",
+                "reactivate": "published", "delete": "deleted"}
+
+
+@router.post("/admin/posts/{post_id}/{action}")
+def moderate_post(post_id: UUID, action: Literal["approve", "request_changes", "reject", "pause", "reactivate", "delete"], body: ModIn,
+                  user: CurrentUser = Depends(MOD)):
+    ratelimit.hit(ratelimit.ADMIN_USER, str(user.id))
+    if action in ("request_changes", "reject", "pause", "delete") and not body.reason:
+        raise err(422, "MOTIVO_OBLIGATORIO")
+    reason = clean_text(body.reason)
+    with unit_of_work("app", user.id, user.ctx, reason=reason or f"Moderación: {action}") as conn:
+        if not scalar(conn, "SELECT 1 FROM app.posts WHERE id = :p", {"p": post_id}):
+            raise err(404, "NO_ENCONTRADA", "Publicación inexistente.")
+        conn.execute(text("UPDATE app.posts SET status = CAST(:s AS app.listing_status), status_reason = coalesce(:r, status_reason) WHERE id = :p"),
+                     {"s": POST_ACTIONS[action], "r": reason, "p": post_id})
         return _private(conn, post_id)

@@ -62,8 +62,13 @@ INSERT INTO app.messages (conversation_id, sender_user_id, sender_side, body) VA
 SELECT t.ok((SELECT count(*) = 1 FROM app.messages WHERE conversation_id = :'c_id'), 'la compradora lee su conversación (sin recursión RLS)');
 SELECT t.ok((SELECT count(*) = 1 FROM app.messages m WHERE m.read_at IS NULL AND m.sender_user_id <> app.me()
                 AND EXISTS (SELECT 1 FROM app.conversations c WHERE c.id = m.conversation_id)) IS NOT NULL, 'subconsulta de no leídos sobre messages no recursa');
+SELECT t.ok((SELECT count(*) = 0 FROM app.listings WHERE id = :'l_id'), 'la compradora no lee app.listings ajeno (RLS)');
+SELECT t.ok((SELECT subject_title = 'Gol Trend de prueba' AND vertical = 'vehicle' AND subject_code IS NOT NULL AND subject_status = 'published'
+               FROM app.conversation_subject(:'c_id')), 'pero sí ve el asunto de su conversación (conversation_subject)');
 SELECT t.as_user(t.id('sam'));
 SELECT t.ok((SELECT count(*) = 1 FROM app.messages WHERE conversation_id = :'c_id'), 'el vendedor lee la conversación');
+SELECT t.as_user(t.id('oto'));
+SELECT t.ok((SELECT count(*) = 0 FROM app.conversation_subject(:'c_id')), 'un tercero no obtiene el asunto de una conversación ajena');
 SELECT t.as_user(t.id('oto'));
 SELECT t.ok((SELECT count(*) = 0 FROM app.messages), 'un tercero no ve mensajes ajenos');
 SELECT t.as_user(t.id('mia'));
