@@ -1,0 +1,25 @@
+{
+  "fuente": "API Georef — Datos Argentina (datos.gob.ar)",
+  "licencia": "Creative Commons Attribution 4.0",
+  "documentacion": "https://www.argentina.gob.ar/georef/descarga-de-la-base-completa",
+  "descargado_el": "2026-11-16T04:38:42Z",
+  "archivos": {
+    "provincias.csv": {
+      "url": "https://apis.datos.gob.ar/georef/api/v2.0/provincias.json",
+      "filas": 24,
+      "sha256": "d355add87faff8f81b09db5ad38386c7ca2b396c4b678dce37434968989e88fc"
+    },
+    "departamentos.csv": {
+      "url": "https://apis.datos.gob.ar/georef/api/v2.0/departamentos.json",
+      "filas": 529,
+      "sha256": "c0ef8d9b6a3dd6ee0c438637841f63b919e28096e4458743c66812da2e0f8f71"
+    },
+    "localidades.csv": {
+      "url": "https://apis.datos.gob.ar/georef/api/v2.0/localidades.json",
+      "filas": 4028,
+      "sha256": "b842a35da3ae466a44e13583d09c7f73b46224fe21ce66380cc62b84efcc37a7"
+    }
+  },
+  "departamentos_omitidos": 0,
+  "localidades_omitidas_sin_departamento": 0
+}

@@ -44,4 +44,4 @@ superadmin:  ## Crea el primer superadmin: make superadmin EMAIL=vos@dominio.com
 	$(COMPOSE) exec -e SUPERADMIN_PASSWORD api python -m app.cli create-superadmin $(EMAIL)
 
 lint:  ## ruff + bandit dentro de la imagen de desarrollo
-	$(COMPOSE) --profile test run --rm --build tests sh -c "ruff check . && bandit -q -r app -c pyproject.toml"
+	$(COMPOSE) --profile test run --rm --build tests sh -c "ruff check --no-cache . && bandit -q -r app -c pyproject.toml"
