@@ -23,15 +23,15 @@ logs:  ## Sigue los logs
 	$(COMPOSE) logs -f --tail=100
 
 test:  ## pytest dentro de Docker contra PostgreSQL real (base efímera girando_test)
-	$(COMPOSE) --profile test run --rm tests
+	$(COMPOSE) --profile test run --rm --build tests
 
 reset:  ## BORRA la base local y los volúmenes (docker compose down -v)
 	$(COMPOSE) down -v
 
 reset-dev-db:  ## Vacía la base local de desarrollo, migra desde cero y carga los seeds (solo ENV=development)
 	$(COMPOSE) up -d db redis
-	$(COMPOSE) run --rm --no-deps api python -m app.cli reset-dev-db --confirm $(DB_NAME)
-	$(COMPOSE) up -d --force-recreate api worker
+	$(COMPOSE) run --rm --no-deps --build api python -m app.cli reset-dev-db --confirm $(DB_NAME)
+	$(COMPOSE) up -d --build --force-recreate api worker
 
 build-web:  ## Regenera web/index.html y web/admin/index.html desde web/src
 	python3 scripts/build_web.py
@@ -44,4 +44,4 @@ superadmin:  ## Crea el primer superadmin: make superadmin EMAIL=vos@dominio.com
 	$(COMPOSE) exec -e SUPERADMIN_PASSWORD api python -m app.cli create-superadmin $(EMAIL)
 
 lint:  ## ruff + bandit dentro de la imagen de desarrollo
-	$(COMPOSE) --profile test run --rm tests sh -c "ruff check . && bandit -q -r app -c pyproject.toml"
+	$(COMPOSE) --profile test run --rm --build tests sh -c "ruff check . && bandit -q -r app -c pyproject.toml"
