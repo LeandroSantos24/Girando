@@ -21,7 +21,7 @@ from app.core.db import row, rows, scalar, unit_of_work
 from app.core.errors import err
 from app.core.middleware import client_ip
 from app.integrations import NotConfigured
-from app.schemas.common import StrictModel, clean_text
+from app.schemas.common import PhoneE164, StrictModel, clean_text
 from app.services.analytics import track
 from app.services.media import MAX_BYTES, CloudinaryImageStorage, get_storage
 
@@ -142,6 +142,7 @@ class PostFields(StrictModel):
     description: Annotated[str, StringConstraints(max_length=5000)] | None = None
     price_amount: Money | None = None
     currency: Literal["ARS", "USD"] | None = None
+    contact_whatsapp_e164: PhoneE164 | None = None      # obligatorio para enviar a revisión (lo exige la base)
     details: dict | None = None
 
     @field_validator("title", "description")
@@ -180,7 +181,8 @@ def _save_details(conn, vertical: str, post_id, d: dict) -> None:
 
 PRIVATE_SQL = """SELECT p.id, p.public_code, p.vertical::text AS vertical, p.agency_id, a.trade_name AS agency_name, p.geo_area_id, g.name AS locality,
        p.title, p.description, p.price_amount, p.currency::text AS currency, p.status::text AS status, p.status_reason, p.submitted_at,
-       p.published_at, p.expires_at, p.created_at, p.updated_at,
+       p.published_at, p.expires_at, p.created_at, p.updated_at, p.contact_whatsapp_e164,
+       (p.contact_whatsapp_e164 IS NOT NULL OR a.whatsapp_e164 IS NOT NULL) AS has_whatsapp,
        coalesce(to_jsonb(t) - 'post_id', to_jsonb(s) - 'post_id', to_jsonb(r) - 'post_id', to_jsonb(j) - 'post_id') AS details,
        (SELECT jsonb_agg(jsonb_build_object('id', i.id, 'url', i.secure_url, 'position', i.position, 'is_cover', i.is_cover) ORDER BY i.position)
           FROM app.post_images i WHERE i.post_id = p.id AND i.status = 'active') AS images
@@ -203,10 +205,17 @@ def _private(conn, post_id) -> dict:
 @router.get("/me/posts")
 def my_posts(vertical: Vertical | None = None, agency_id: UUID | None = None, user: CurrentUser = Depends(current_user)):
     with unit_of_work("app", user.id, user.ctx) as conn:
-        return {"items": rows(conn, PRIVATE_SQL + """ WHERE p.status <> 'deleted' AND app.can_manage_listing(p.owner_user_id, p.agency_id)
-                                                        AND (CAST(:v AS text) IS NULL OR p.vertical::text = :v)
-                                                        AND (CAST(:a AS uuid) IS NULL OR p.agency_id = :a)
-                                                      ORDER BY p.updated_at DESC LIMIT 200""", {"v": vertical, "a": agency_id})}
+        items = rows(conn, PRIVATE_SQL + """ WHERE p.status <> 'deleted' AND app.can_manage_listing(p.owner_user_id, p.agency_id)
+                                               AND (CAST(:v AS text) IS NULL OR p.vertical::text = :v)
+                                               AND (CAST(:a AS uuid) IS NULL OR p.agency_id = :a)
+                                             ORDER BY p.updated_at DESC LIMIT 200""", {"v": vertical, "a": agency_id})
+        ids = [i["id"] for i in items]
+        st = {r["post_id"]: r for r in rows(conn, """SELECT post_id, sum(views) AS views, sum(whatsapp_opens) AS whatsapp_opens
+                                                       FROM app.post_stats_daily WHERE post_id = ANY(:ids) GROUP BY post_id""", {"ids": ids})} if ids else {}
+        for i in items:      # resumen por día (rollup); nunca la tabla cruda de eventos
+            r = st.get(i["id"])
+            i["stats"] = {"views": int(r["views"]) if r else 0, "whatsapp_opens": int(r["whatsapp_opens"]) if r else 0}
+        return {"items": items}
 
 
 @router.post("/me/posts", status_code=201)
@@ -214,10 +223,14 @@ def create_post(body: PostCreate, user: CurrentUser = Depends(current_user)):
     ratelimit.hit(ratelimit.LISTING_CREATE_USER, str(user.id))
     details = _parse_details(body.vertical, body.details)
     with unit_of_work("app", user.id, user.ctx, reason="Alta de publicación") as conn:
-        pid = scalar(conn, """INSERT INTO app.posts (vertical, owner_user_id, agency_id, created_by, geo_area_id, title, description, price_amount, currency)
-                              VALUES (CAST(:v AS app.post_vertical), :u, :a, :u, :g, coalesce(:t, ''), :d, :p, CAST(coalesce(:c, 'ARS') AS app.currency_code))
+        # WhatsApp: el que manda el formulario o, si no, el del perfil (particular). Un comercio usa su WhatsApp comercial de respaldo.
+        wa = body.contact_whatsapp_e164 or (None if body.agency_id else
+                                            scalar(conn, "SELECT contact_whatsapp_e164 FROM app.user_profiles WHERE user_id = :u", {"u": user.id}))
+        pid = scalar(conn, """INSERT INTO app.posts (vertical, owner_user_id, agency_id, created_by, geo_area_id, title, description, price_amount, currency,
+                                                    contact_whatsapp_e164)
+                              VALUES (CAST(:v AS app.post_vertical), :u, :a, :u, :g, coalesce(:t, ''), :d, :p, CAST(coalesce(:c, 'ARS') AS app.currency_code), :wa)
                               RETURNING id""", {"v": body.vertical, "u": user.id, "a": body.agency_id, "g": body.geo_area_id, "t": body.title,
-                                                "d": body.description, "p": body.price_amount, "c": body.currency})
+                                                "d": body.description, "p": body.price_amount, "c": body.currency, "wa": wa})
         if details is not None:
             _save_details(conn, body.vertical, pid, details)
         return _private(conn, pid)
@@ -481,6 +494,7 @@ def post_detail(code: str, request: Request, user: CurrentUser | None = Depends(
     if user:
         with unit_of_work("app", user.id, ctx) as conn:
             d["is_mine"] = bool(scalar(conn, "SELECT app.can_manage_post_id(:p)", {"p": d["id"]}))
+    d["whatsapp_url"] = f"/api/out/wa/{d['public_code']}"      # el número no viaja: lo resuelve el redirect
     track("post_view", ctx, None, agency_id=d["agency_id"], properties={"vertical": base["vertical"], "post": str(d["id"])})
     return d
 

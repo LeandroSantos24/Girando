@@ -41,6 +41,7 @@ CONTACT_REVEAL_USER = Limit("contact_reveal", 60, 3600)
 ADMIN_USER = Limit("admin", 300, 60)
 GLOBAL_IP = Limit("global_ip", 600, 60)
 OUTBOUND_IP = Limit("outbound_ip", 60, 60)
+WHATSAPP_IP = Limit("whatsapp_ip", 30, 600)      # abrir WhatsApp: 30 cada 10 minutos por IP
 
 
 class _Memory:

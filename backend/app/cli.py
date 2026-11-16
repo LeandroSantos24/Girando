@@ -386,20 +386,31 @@ def job_purge_identifiers(conn) -> int:
 
 
 def job_aggregate_stats(conn) -> int:
-    """Recalcula listing_stats_daily de los últimos 2 días desde analytics_events (idempotente)."""
-    return _q(conn, """
-        INSERT INTO app.listing_stats_daily (listing_id, day, impressions, views, favorites, unfavorites, contacts, contact_reveals, shares, promotion_clicks)
+    """Recalcula listing_stats_daily y post_stats_daily de los últimos 2 días desde analytics_events (idempotente)."""
+    n = _q(conn, """
+        INSERT INTO app.listing_stats_daily (listing_id, day, impressions, views, favorites, unfavorites, contacts, contact_reveals, shares, promotion_clicks,
+                                             whatsapp_opens)
         SELECT e.listing_id, e.occurred_at::date,
                count(*) FILTER (WHERE event_name = 'listing_impression'), count(*) FILTER (WHERE event_name = 'listing_view'),
                count(*) FILTER (WHERE event_name = 'listing_favorite'), count(*) FILTER (WHERE event_name = 'listing_unfavorite'),
                count(*) FILTER (WHERE event_name = 'listing_contact'), count(*) FILTER (WHERE event_name = 'listing_contact_reveal'),
-               count(*) FILTER (WHERE event_name = 'listing_share'), count(*) FILTER (WHERE event_name = 'promotion_click')
+               count(*) FILTER (WHERE event_name = 'listing_share'), count(*) FILTER (WHERE event_name = 'promotion_click'),
+               count(*) FILTER (WHERE event_name = 'listing_contact' AND properties ->> 'channel' = 'whatsapp')
           FROM app.analytics_events e JOIN app.listings l ON l.id = e.listing_id
          WHERE e.listing_id IS NOT NULL AND e.occurred_at >= current_date - 1
          GROUP BY 1, 2
         ON CONFLICT (listing_id, day) DO UPDATE SET impressions = EXCLUDED.impressions, views = EXCLUDED.views, favorites = EXCLUDED.favorites,
             unfavorites = EXCLUDED.unfavorites, contacts = EXCLUDED.contacts, contact_reveals = EXCLUDED.contact_reveals, shares = EXCLUDED.shares,
-            promotion_clicks = EXCLUDED.promotion_clicks""").rowcount
+            promotion_clicks = EXCLUDED.promotion_clicks, whatsapp_opens = EXCLUDED.whatsapp_opens""").rowcount
+    n += _q(conn, """
+        INSERT INTO app.post_stats_daily (post_id, day, views, whatsapp_opens)
+        SELECT p.id, e.occurred_at::date, count(*) FILTER (WHERE e.event_name = 'post_view'),
+               count(*) FILTER (WHERE e.event_name = 'post_contact' AND e.properties ->> 'channel' = 'whatsapp')
+          FROM app.analytics_events e JOIN app.posts p ON p.id::text = e.properties ->> 'post'
+         WHERE e.event_name IN ('post_view', 'post_contact') AND e.occurred_at >= current_date - 1
+         GROUP BY 1, 2
+        ON CONFLICT (post_id, day) DO UPDATE SET views = EXCLUDED.views, whatsapp_opens = EXCLUDED.whatsapp_opens""").rowcount
+    return n
 
 
 def job_subscriptions(conn) -> dict:

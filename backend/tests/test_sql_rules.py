@@ -35,4 +35,10 @@ def test_sql_business_rules():
     # Cargador de Georef (provincias, departamentos, localidades): idempotente y sin duplicados
     r = run("-f", str(ROOT / "tests" / "sql" / "920_georef.sql"), db="girando_sqltest")
     assert r.stderr.count("NOTICE:  ok") >= 8
+    # Migraciones posteriores a la base única (0002 en adelante) y sus verificaciones
+    for f in sorted(p for p in (ROOT / "sql").iterdir() if p.name[:4] > "0001" and p.name[:4].isdigit()):
+        for sqlf in (sorted(f.glob("*.sql")) if f.is_dir() else [f]):
+            run("-f", str(sqlf), db="girando_sqltest")
+    r = run("-f", str(ROOT / "tests" / "sql" / "930_whatsapp_mercado.sql"), db="girando_sqltest")
+    assert r.stderr.count("NOTICE:  ok") >= 8
     run("-c", "DROP DATABASE IF EXISTS girando_sqltest")

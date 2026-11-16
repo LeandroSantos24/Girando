@@ -142,6 +142,7 @@ SETTINGS = [
     ("listings.max_images", 6, "Máximo de fotos activas por publicación", True),
     ("messaging.max_new_conversations_per_day", 10, "Conversaciones nuevas por usuario por día", False),
     ("stats.min_sample_size", 3, "Muestra mínima para mostrar promedios", True),
+    ("market.min_sample_size", 5, "Muestra mínima de publicaciones comparables para mostrar precio vs mercado y demanda del mercado", True),
     ("fx.source", "BCRA - Comunicación A 3500 (referencia mayorista)", "Fuente de cotización USD para normalizar precios", True),
     ("payments.bank_transfer", None, "Datos bancarios para transferencias. PENDIENTE: cargar datos reales desde el Admin.", False),
     ("billing.renewal_window_days", 15, "Días antes del fin del período en que un pago cuenta como renovación (continúa la fecha)", False),

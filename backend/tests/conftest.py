@@ -85,6 +85,9 @@ def new_client():
     return c
 
 
+TEST_WHATSAPP = "+5492615550101"
+
+
 def register(c, email=None, password="Clave-segura-123", name="Tester"):
     email = email or f"u{uuid.uuid4().hex[:10]}@girando.test"
     # Los tests largos registran más de 5 usuarios desde la misma IP: el límite de registro (5/hora por IP)
@@ -92,6 +95,8 @@ def register(c, email=None, password="Clave-segura-123", name="Tester"):
     ratelimit.reset_memory(ratelimit.REGISTER_IP.bucket)
     r = c.post("/api/auth/register", json={"email": email, "password": password, "display_name": name, "accept_terms": True})
     assert r.status_code == 201, r.text
+    # WhatsApp es obligatorio para publicar (CONTEXTO §2): los tests parten de un perfil que ya lo tiene cargado.
+    assert c.patch("/api/me/profile", json={"contact_whatsapp_e164": TEST_WHATSAPP}).status_code == 200
     return email, r.json()["user"]
 
 
@@ -146,6 +151,7 @@ def make_agency(c, name="Autos Fase 3", **extra):
     geo = c.get("/api/geo?level=province").json()["items"]
     mza = next(p for p in geo if p["name"] == "Mendoza")["id"]
     gc = next(d for d in c.get(f"/api/geo?parent_id={mza}").json()["items"] if d["name"] == "Godoy Cruz")["id"]
-    r = c.post("/api/me/agencies", json={"legal_name": f"{name} SRL", "trade_name": name, "cuit": make_cuit(), "geo_area_id": gc, **extra})
+    r = c.post("/api/me/agencies", json={"legal_name": f"{name} SRL", "trade_name": name, "cuit": make_cuit(), "geo_area_id": gc,
+                                         "whatsapp_e164": TEST_WHATSAPP, **extra})
     assert r.status_code == 201, r.text
     return r.json()

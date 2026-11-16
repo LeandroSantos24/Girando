@@ -20,7 +20,7 @@ def _cuit():
 
 
 def _agency(c):
-    r = c.post("/api/me/agencies", json={"legal_name": "Autos Test S.R.L.", "trade_name": "Autos Test", "cuit": _cuit(), "geo_area_id": geo_id(c)})
+    r = c.post("/api/me/agencies", json={"legal_name": "Autos Test S.R.L.", "trade_name": "Autos Test", "cuit": _cuit(), "whatsapp_e164": "+5492615550101", "geo_area_id": geo_id(c)})
     assert r.status_code == 201, r.text
     return r.json()["id"]
 

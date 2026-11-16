@@ -5,6 +5,7 @@ columna privada desde acá porque ese rol no tiene permiso sobre las tablas.
 """
 from __future__ import annotations
 
+import re
 from decimal import Decimal
 from typing import Annotated, Literal
 from uuid import UUID
@@ -205,8 +206,22 @@ def listing_detail(code: str, request: Request, user: CurrentUser | None = Depen
             d["is_mine"] = bool(scalar(conn, "SELECT app.can_manage_listing_id(:l)", {"l": d["id"]}))
         from app.api.routers.marketplace import touch_viewed  # historial propio del usuario (no es analítica)
         touch_viewed(user, d["id"])
+    d["whatsapp_url"] = f"/api/out/wa/{d['public_code']}"      # el número no viaja: lo resuelve el redirect
     track("listing_view", ctx, user.id if user else None, listing_id=d["id"], agency_id=d["agency_id"])
     return d
+
+
+@router.get("/listings/{code}/market")
+def listing_market(code: str, request: Request):
+    """Precio vs mercado. Solo con muestra suficiente (market.min_sample_size); si no, `sufficient=false` y ningún número."""
+    with unit_of_work("anon", None, request_ctx(request)) as conn:
+        lid = scalar(conn, "SELECT id FROM api_public.listings WHERE public_code = :c OR id::text = :c", {"c": code[:64]})
+        if not lid:
+            raise err(404, "NO_ENCONTRADA", "La publicación no existe o ya no está disponible.")
+        m = row(conn, "SELECT * FROM app.market_price(:l)", {"l": lid}) or {"sample": 0, "sufficient": False}
+    if not m.get("sufficient"):
+        return {"sufficient": False, "sample": m.get("sample") or 0, "min_sample": m.get("min_sample"), "message": "Sin datos suficientes"}
+    return {**m, "basis": "Publicaciones activas del mismo modelo y año ±1, en pesos (dólar BCRA)."}
 
 
 @router.get("/listings/{code}/contact")
@@ -351,3 +366,42 @@ def outbound_agency(slug: Annotated[str, StringConstraints(max_length=60, patter
     # Sin user_id ni IP: solo el hecho del clic para las estadísticas de la agencia
     track("external_click", ctx.__class__(request_id=ctx.request_id), agency_id=a["id"], listing_id=lid, properties={"channel": channel})
     return RedirectResponse(target, status_code=302, headers={"Cache-Control": "no-store", "Referrer-Policy": "origin"})
+
+
+# --------------------------------------------------------------------------- WhatsApp: el contacto principal
+_BOT_UA = re.compile(r"bot|crawl|spider|slurp|preview|facebookexternalhit|whatsapp|telegram|curl|wget|python-|httpx|go-http|java/|scrapy|headless|phantom|"
+                     r"lighthouse|monitor|pingdom|uptime", re.I)
+PublicCode = Annotated[str, StringConstraints(pattern=r"^[A-Z]-[A-Z0-9]{8}$")]
+
+
+def is_bot(user_agent: str | None) -> bool:
+    return not user_agent or len(user_agent) < 20 or bool(_BOT_UA.search(user_agent))
+
+
+@router.get("/out/wa/{code}", include_in_schema=True)
+def outbound_whatsapp(code: PublicCode, request: Request):
+    """Abre WhatsApp con el vendedor, sin iniciar sesión. El número no está en la página: se resuelve acá.
+
+    · Mensaje precargado con el título y el código, para que quien vende sepa de dónde viene el contacto.
+    · Límite por IP y filtro de bots (un bot no recibe el número ni cuenta como apertura).
+    · Se registra SOLO el hecho de la apertura (publicación, fecha): ni usuario, ni IP, ni identificador de sesión."""
+    from urllib.parse import quote
+
+    from fastapi.responses import RedirectResponse
+    ratelimit.hit(ratelimit.WHATSAPP_IP, client_ip(request))
+    ctx = request_ctx(request)
+    if is_bot(ctx.user_agent):
+        raise err(403, "NO_DISPONIBLE", "Abrí WhatsApp desde la ficha de la publicación.")
+    with unit_of_work("worker", None, ctx) as conn:
+        t = row(conn, "SELECT * FROM app.whatsapp_target(:c)", {"c": code})
+    if not t or not t["whatsapp"]:
+        raise err(404, "NO_ENCONTRADA", "La publicación no está disponible o no tiene WhatsApp de contacto.")
+    anon = ctx.__class__(request_id=ctx.request_id)        # sin IP ni user agent: nunca se guarda quién hizo clic
+    if t["kind"] == "listing":
+        track("listing_contact", anon, listing_id=t["entity_id"], agency_id=t["agency_id"], properties={"channel": "whatsapp"})
+    else:
+        track("post_contact", anon, agency_id=t["agency_id"], properties={"channel": "whatsapp", "vertical": t["vertical"], "post": str(t["entity_id"])})
+    msg = f"Hola, vi tu {t['title'] or 'publicación'} en Girando ({t['public_code']})"
+    url = "https://wa.me/" + "".join(ch for ch in t["whatsapp"] if ch.isdigit()) + "?text=" + quote(msg)
+    return RedirectResponse(url, status_code=302, headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer",
+                                                           "X-Robots-Tag": "noindex, nofollow"})

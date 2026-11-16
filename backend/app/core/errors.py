@@ -56,6 +56,7 @@ MESSAGES = {
     "MENSAJE_REPETIDO": "Ya enviaste ese mismo mensaje.",
     "LIMITE_MENSAJES_POR_HORA": "Enviaste muchos mensajes seguidos. Esperá un rato y probá de nuevo.",
     "LIMITE_CONVERSACIONES_DIARIAS": "Llegaste al máximo de conversaciones nuevas por hoy.",
+    "WHATSAPP_OBLIGATORIO": "Cargá un WhatsApp de contacto: es obligatorio para publicar.",
     "VERTICAL_INCORRECTA": "Los datos no corresponden a esa sección.",
 }
 

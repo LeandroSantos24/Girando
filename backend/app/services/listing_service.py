@@ -77,11 +77,13 @@ def list_mine(conn: Connection, user_id, group: str, agency_id=None) -> list[dic
     items = rows(conn, PRIVATE_LISTING_SQL + f" WHERE {where} AND l.status::text = ANY(:s) ORDER BY l.updated_at DESC",
                  {"u": user_id, "a": agency_id, "s": sts})
     ids = [i["id"] for i in items]
-    stats = {r["listing_id"]: r for r in rows(conn, """SELECT listing_id, sum(views) AS views, sum(contacts) AS contacts, sum(favorites) - sum(unfavorites) AS favs
+    stats = {r["listing_id"]: r for r in rows(conn, """SELECT listing_id, sum(views) AS views, sum(contacts) AS contacts, sum(favorites) - sum(unfavorites) AS favs,
+                                                               sum(whatsapp_opens) AS whatsapp_opens
                                                         FROM app.listing_stats_daily WHERE listing_id = ANY(:ids) GROUP BY listing_id""", {"ids": ids})} if ids else {}
     for i in items:
         st = stats.get(i["id"])
         i["stats"] = {"views": int(st["views"]) if st else 0, "contacts": int(st["contacts"]) if st else 0,
+                      "whatsapp_opens": int(st["whatsapp_opens"]) if st else 0,
                       "favorites": scalar(conn, "SELECT app.listing_favorites_count(:id)", {"id": i["id"]})}
     return items
 

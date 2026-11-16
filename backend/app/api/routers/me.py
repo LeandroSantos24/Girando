@@ -302,7 +302,12 @@ def favorites(user: CurrentUser = Depends(current_user)):
     with unit_of_work("app", user.id, user.ctx) as conn:
         return {"items": rows(conn, """SELECT f.listing_id, f.created_at AS saved_at, (pl.id IS NOT NULL) AS available,
                                               pl.public_code, pl.title, pl.brand, pl.model, pl.version, pl.year, pl.km, pl.price_amount,
-                                              pl.currency, pl.locality, pl.province, pl.cover_url
+                                              pl.currency, pl.locality, pl.province, pl.cover_url,
+                                              f.price_at_save, f.currency_at_save::text AS currency_at_save,
+                                              (pl.id IS NOT NULL AND f.price_at_save IS NOT NULL AND pl.currency::text = f.currency_at_save::text
+                                               AND pl.price_amount < f.price_at_save) AS price_dropped,
+                                              CASE WHEN pl.id IS NOT NULL AND pl.currency::text = f.currency_at_save::text AND pl.price_amount < f.price_at_save
+                                                   THEN f.price_at_save - pl.price_amount END AS price_drop_amount
                                          FROM app.favorites f LEFT JOIN api_public.listings pl ON pl.id = f.listing_id
                                         WHERE f.user_id = :u ORDER BY f.created_at DESC""", {"u": user.id})}
 
