@@ -20,6 +20,33 @@ Todo local. Nada desplegado. Nada de datos ni pagos reales.
 - Fuera del repo se borraron `../backend/`, `../Claude outputs/`, `../girando-completo.zip` y los cinco `*.bundle`
   (antes se comprobó con `git merge-base --is-ancestor` que todos estaban aplicados). Quedan los dos logos y `Mobile app design planning.zip`.
 
+### Bloque B · EN CURSO, SIN COMMIT (corte por límite de uso, 16/11)
+Todo esto está en el árbol de trabajo, **sin commitear**. `main` en GitHub quedó en el bloque A (verde).
+
+**Backend (escrito y probado en parte):**
+- `backend/sql/0002_contacto_whatsapp.sql` + `migrations/versions/0002_contacto_whatsapp.py`: WhatsApp obligatorio para enviar a
+  revisión (vehículos y verticales), `posts.contact_whatsapp_e164`, `app.whatsapp_target()` solo para el rol de sistema,
+  `post_stats_daily` y `listing_stats_daily.whatsapp_opens`, `favorites.price_at_save`, `app.market_price()`.
+- `GET /api/out/wa/{code}` (sin login, límite 30/10 min por IP, filtro de bots, sin guardar quién hizo clic),
+  `GET /api/listings/{code}/market`, favoritos con `price_dropped`, estadísticas con aperturas de WhatsApp.
+- Tests nuevos: `tests/test_whatsapp.py` (6) y `tests/sql/930_whatsapp_mercado.sql` (12 ok). Verificado: esos tests y
+  `test_billing.py` en verde. **Falta:** correr `make test` completo y `make lint` después de los últimos dos arreglos
+  (la corrida completa anterior dio 2 rojos, ya corregidos y vueltos a correr solos).
+- Hallazgo: el backend "completo" no tenía el redirect de WhatsApp de publicaciones, ni WhatsApp en las verticales, ni precio vs mercado.
+
+**Frontend (escrito, SIN compilar ni probar):** `web/src/f4/00-core.js`, `10-vehiculos.js`, `20-verticales.js`, `90-app.js`
+(componentes React sin JSX que se montan en la plantilla; rutas con estado en la URL). `scripts/build_web.py` todavía no los
+incluye, así que la web servida no cambió. Falta para que funcione:
+1. `build_web.py`: concatenar `web/src/f4/*.js` después de `app-logic.js`.
+2. Plantilla `app.html`: slot `<sc-if value="{{ isF4 }}">{{ f4 }}</sc-if>` en `<main>`, `{{ f4Home }}`, `{{ f4Menu }}`, campo
+   WhatsApp en el asistente (`{{ wzWhatsapp }}` / `{{ onWzWhatsapp }}`), quitar las pantallas viejas reemplazadas.
+3. Escribir los componentes que `90-app.js` ya referencia: `XAccount` (Mi Girando), `XPlans`, `XCommerce`, `XBoost`,
+   `XAdvertiser`, y `xAdsFor` / `XSponsoredCard` (usados en `10-vehiculos.js`).
+4. CSS de las clases `g4-*` en `web/css/app.css`; tipografía (2 opciones woff2 OFL).
+5. `make e2e` / `make check` con Playwright en Docker y capturas en los tres tamaños.
+
+Bloques C, D, E y F: no empezados.
+
 ---
 
 # Bitácora anterior (checkpoint del 16/11/2026, 01:40)
