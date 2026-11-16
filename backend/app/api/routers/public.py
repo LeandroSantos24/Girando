@@ -65,15 +65,59 @@ def versions(generation_id: UUID, request: Request):
                                          FROM api_public.catalog_versions WHERE generation_id = :g ORDER BY version""", {"g": generation_id})}
 
 
+GEO_PATH = """SELECT g.id, g.name, g.level::text AS level, g.parent_id,
+       CASE g.level::text WHEN 'locality' THEN d.name WHEN 'department' THEN NULL END AS department,
+       CASE g.level::text WHEN 'locality' THEN pr.name WHEN 'department' THEN d.name END AS province,
+       CASE g.level::text WHEN 'locality' THEN d.id END AS department_id,
+       CASE g.level::text WHEN 'locality' THEN pr.id WHEN 'department' THEN d.id END AS province_id
+  FROM api_public.geo_areas g
+  LEFT JOIN api_public.geo_areas d ON d.id = g.parent_id
+  LEFT JOIN api_public.geo_areas pr ON pr.id = d.parent_id"""
+
+
 @router.get("/geo")
-def geo(request: Request, parent_id: UUID | None = None, level: Literal["province", "department", "locality"] | None = None):
+def geo(request: Request, parent_id: UUID | None = None, level: Literal["province", "department", "locality"] | None = None,
+        q: Annotated[str | None, Query(min_length=2, max_length=60)] = None,
+        limit: Annotated[int | None, Query(ge=1, le=500)] = None, offset: Annotated[int, Query(ge=0, le=20000)] = 0):
+    """Ubicaciones de todo el país (Georef). Siempre paginado: nunca devuelve las 4.028 localidades de una vez.
+
+    · `parent_id`: hijos de una provincia o departamento (hasta 500 por página).
+    · `level` sin `parent_id`: provincias completas; departamentos y localidades de a 50 como máximo.
+    · `q`: búsqueda por nombre sin tildes ni mayúsculas (primero los que empiezan con el texto), con provincia y departamento
+      de cada resultado para desambiguar ("San Martín" existe en varias provincias)."""
+    lvl = level or (None if (parent_id or q) else "province")
+    wide = bool(parent_id) or lvl == "province"
+    cap = 500 if wide else 50
+    lim = min(limit or (500 if wide else 20), cap)
+    where, p = ["true"], {"lim": lim, "off": offset}
+    if parent_id:
+        where.append("g.parent_id = :parent")
+        p["parent"] = parent_id
+    if lvl:
+        where.append("g.level::text = :lvl")
+        p["lvl"] = lvl
+    else:
+        where.append("g.level::text IN ('province', 'department', 'locality')")
+    order = "g.name, g.id"
+    if q:
+        p["q"] = search_service._norm(q).strip()
+        where.append("lower(app.f_unaccent(g.name)) LIKE '%' || :q || '%'")
+        order = "(lower(app.f_unaccent(g.name)) LIKE :q || '%') DESC, (g.level::text = 'province') DESC, (g.level::text = 'department') DESC, g.name, g.id"
+    w = " AND ".join(where)
     with unit_of_work("anon", None, request_ctx(request)) as conn:
-        if parent_id:
-            items = rows(conn, "SELECT id, name, level::text AS level FROM api_public.geo_areas WHERE parent_id = :p ORDER BY name", {"p": parent_id})
-        else:
-            items = rows(conn, "SELECT id, name, level::text AS level FROM api_public.geo_areas WHERE level::text = :l ORDER BY name",
-                         {"l": level or "province"})
-        return {"items": items}
+        total = scalar(conn, f"SELECT count(*) FROM api_public.geo_areas g WHERE {w}", p)   # w: fragmentos constantes + parámetros ligados
+        items = rows(conn, f"{GEO_PATH} WHERE {w} ORDER BY {order} LIMIT :lim OFFSET :off", p)
+    return {"items": items, "total": total, "limit": lim, "offset": offset, "has_more": offset + len(items) < total}
+
+
+@router.get("/geo/{area_id}")
+def geo_one(area_id: UUID, request: Request):
+    """Una ubicación con su provincia y departamento: sirve para reconstruir el selector desde una URL compartida."""
+    with unit_of_work("anon", None, request_ctx(request)) as conn:
+        g = row(conn, f"{GEO_PATH} WHERE g.id = :i", {"i": area_id})
+    if not g:
+        raise err(404, "NO_ENCONTRADA", "Esa ubicación no existe.")
+    return g
 
 
 def _filters(

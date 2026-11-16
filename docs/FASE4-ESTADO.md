@@ -1,7 +1,28 @@
-# Fase 4 · estado de avance (checkpoint del 16/11/2026, 01:40)
+# Fase 4 · estado de avance
 
 Archivo de traspaso: cualquier sesión que retome la fase 4 empieza por acá.
 Todo local. Nada desplegado. Nada de datos ni pagos reales.
+
+## Sesión del 16/11/2026 (tarde) · bloques A a F — modo terminal (Docker en la máquina del dueño)
+
+| Bloque | Estado | Verificado |
+|---|---|---|
+| Paso 0 · línea base | Hecho | `make reset-dev-db && make test && make lint`: 80/80, ruff y bandit limpios |
+| A · Orden | **Hecho** | `make test` 84/84 (4 tests nuevos de `/api/geo`), lint limpio |
+
+### Bloque A · qué se hizo
+- `docs/FASE4-ESTADO-1.md` borrado (duplicado sin versionar).
+- `GET /api/geo` paginado y con tope en el servidor: provincias completas; hijos de una provincia o departamento hasta 500
+  por página; **localidades y departamentos sin `parent_id` de a 20 (máximo 50)**. Devuelve `total`, `limit`, `offset`, `has_more`.
+- Búsqueda por nombre `q` (mínimo 2 letras, sin tildes ni mayúsculas, primero lo que empieza con el texto). Cada resultado
+  trae provincia y departamento para desambiguar. `GET /api/geo/{id}` devuelve una ubicación con su ruta (sirve para
+  reconstruir el selector desde una URL compartida).
+- Fuera del repo se borraron `../backend/`, `../Claude outputs/`, `../girando-completo.zip` y los cinco `*.bundle`
+  (antes se comprobó con `git merge-base --is-ancestor` que todos estaban aplicados). Quedan los dos logos y `Mobile app design planning.zip`.
+
+---
+
+# Bitácora anterior (checkpoint del 16/11/2026, 01:40)
 
 ## Bitácora por paso (CONTEXTO.md §9) — sesión del 15/11/2026 por la noche
 
