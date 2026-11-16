@@ -1,4 +1,4 @@
-# Fase 4 · estado de avance (checkpoint del 15/11/2026, 23:30)
+# Fase 4 · estado de avance (checkpoint del 16/11/2026, 01:40)
 
 Archivo de traspaso: cualquier sesión que retome la fase 4 empieza por acá.
 Todo local. Nada desplegado. Nada de datos ni pagos reales.
@@ -81,6 +81,14 @@ La próxima sesión empieza por: `make reset-dev-db && make test`, confirmar los
 
 ## Resultado de tests en este punto
 
+**LÍNEA BASE VERDE — tercera corrida (16/11/2026, 01:35, máquina del dueño, commit `f271087`): 80/80, 0 rojos, 0 salteados.**
+`make reset-dev-db` (Alembic `base_0001` + seeds) y `make test` completos en Docker, con los tests SQL incluidos.
+
+Pendiente del paso 1 del encargo nuevo: `make lint` (ruff + bandit dentro de Docker), correr `migrate` por segunda vez
+(debe ser un no-op), `git push origin main` y `make georef`. Después: paso 3 (frontend de la fase 4).
+
+Historia de cómo se llegó al verde (cinco bugs reales que estaban tapados):
+
 **Primera corrida real con Docker (15/11/2026, 21:55, máquina del dueño): 80 tests → 74 verdes, 5 rojos, 1 salteado.**
 `reset-dev-db` y Alembic (`base_0001`) funcionaron. Los arreglos del paso 4 se confirmaron: ya no hay recursión RLS y la
 casa de repuestos queda `verified`. Los 5 rojos eran dos fallas que antes quedaban tapadas, ya corregidas (falta volver a correr):
@@ -111,7 +119,7 @@ habían ejecutado; dos causas, ya corregidas (falta volver a correr):
    Verificado en SQL: la compradora ve el asunto, un tercero no.
 
 - **Tests SQL con PostgreSQL 16:** `900_flujos.sql` 50/50 · `910_fase4_arreglos.sql` 15/15 · `920_georef.sql` 8/8.
-- **Falta:** volver a correr `make reset-dev-db && make test` (objetivo 80/80), bandit, `migrate` por segunda vez, E2E.
+- **Falta:** bandit, `migrate` por segunda vez, Georef, E2E.
 
 ## Hecho (backend y base)
 
